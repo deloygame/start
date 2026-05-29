@@ -1,11 +1,242 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="az">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;URL='https://deloygame.neocities.org/account'">
-    <title>...</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeLoYGame — Hesabım</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <script type="module">
+    import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential }
+                                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc }
+                                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyCENG4xEaW00K9FY1AagNVQkIJ2076fwp8",
+      authDomain:        "dly-login-3bb4b.firebaseapp.com",
+      projectId:         "dly-login-3bb4b",
+      storageBucket:     "dly-login-3bb4b.firebasestorage.app",
+      messagingSenderId: "898217736519",
+      appId:             "1:898217736519:web:3a70514bf9ce3c6ae4f462"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // ── Auth state ───────────────────────────────────────────────
+    onAuthStateChanged(auth, async user => {
+      if (!user) { window.location.href = "auth.html"; return; }
+
+      // Avatar + ad
+      const name     = user.displayName || user.email.split("@")[0];
+      const initials = name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+      const av = document.getElementById("sidebar-avatar");
+      if (user.photoURL) {
+        av.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+      } else {
+        av.textContent = initials;
+      }
+      document.getElementById("sidebar-name").textContent  = name;
+      document.getElementById("sidebar-email").textContent = user.email;
+
+      // Settings form
+      const parts = name.split(" ");
+      document.getElementById("settings-name").value    = parts[0] || "";
+      document.getElementById("settings-surname").value = parts.slice(1).join(" ") || "";
+      document.getElementById("settings-email").value   = user.email;
+
+      // Google → şifrə bölməsini gizlət
+      if (user.providerData[0]?.providerId === "google.com") {
+        document.getElementById("pass-section").style.display    = "none";
+        document.getElementById("google-pass-note").style.display = "block";
+      }
+    });
+
+    // ── Profil saxla ─────────────────────────────────────────────
+    window.saveProfile = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const name    = document.getElementById("settings-name").value.trim();
+      const surname = document.getElementById("settings-surname").value.trim();
+      const full    = [name, surname].filter(Boolean).join(" ");
+      if (!full) { showToast("Ad boş ola bilməz.", "error"); return; }
+      try {
+        await updateProfile(user, { displayName: full });
+        await setDoc(doc(db, "users", user.uid), { displayName: full, email: user.email }, { merge: true });
+        document.getElementById("sidebar-name").textContent = full;
+        const av = document.getElementById("sidebar-avatar");
+        if (!user.photoURL) av.textContent = full.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+        showToast("Ad uğurla yeniləndi ✓", "success");
+      } catch(e) { showToast(e.message, "error"); }
+    };
+
+    // ── Şifrə ────────────────────────────────────────────────────
+    window.changePassword = async () => {
+      const user = auth.currentUser;
+      const cur  = document.getElementById("pass-current").value;
+      const nxt  = document.getElementById("pass-new").value;
+      const nxt2 = document.getElementById("pass-new2").value;
+      if (!cur||!nxt||!nxt2)  { showToast("Bütün sahələri doldurun.", "error"); return; }
+      if (nxt.length < 6)     { showToast("Yeni şifrə ən az 6 simvol.", "error"); return; }
+      if (nxt !== nxt2)       { showToast("Şifrələr uyğun gəlmir.", "error"); return; }
+      try {
+        const cred = EmailAuthProvider.credential(user.email, cur);
+        await reauthenticateWithCredential(user, cred);
+        await updatePassword(user, nxt);
+        ["pass-current","pass-new","pass-new2"].forEach(id=>document.getElementById(id).value="");
+        showToast("Şifrə uğurla dəyişdirildi ✓", "success");
+      } catch(e) {
+        const map = { "auth/wrong-password":"Cari şifrə yanlışdır.", "auth/invalid-credential":"Cari şifrə yanlışdır.", "auth/too-many-requests":"Çox cəhd. Gözləyin." };
+        showToast(map[e.code]||e.message, "error");
+      }
+    };
+
+    // ── Çıxış ────────────────────────────────────────────────────
+    window.logoutUser = async () => {
+      await signOut(auth);
+      window.location.href = "auth.html";
+    };
+
+    // ── Toast ────────────────────────────────────────────────────
+    window.showToast = (msg, type="info") => {
+      let c = document.getElementById("toast-box");
+      if (!c) { c=document.createElement("div"); c.id="toast-box"; c.style.cssText="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px"; document.body.appendChild(c); }
+      const colors={success:"#4ade80",error:"#f87171",info:"#38bdf8"};
+      const col = colors[type]||colors.info;
+      const t=document.createElement("div");
+      t.style.cssText=`background:rgba(15,23,42,.97);border:1px solid ${col}33;border-left:3px solid ${col};padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:10px;min-width:240px;transform:translateX(120%);transition:transform .4s cubic-bezier(.68,-.55,.265,1.55);font-family:'Inter',sans-serif`;
+      t.innerHTML=`<i class="fas ${type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-bell'}" style="color:${col}"></i><span style="color:#f8fafc">${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(()=>t.style.transform="translateX(0)",50);
+      setTimeout(()=>{t.style.transform="translateX(120%)";setTimeout(()=>t.remove(),400);},4000);
+    };
+  </script>
+
+  <style>
+    :root {
+      --bg:#0f172a; --card:rgba(30,41,59,0.85); --border:rgba(255,255,255,0.1);
+      --primary:#38bdf8; --accent:#818cf8; --text:#f8fafc; --muted:#94a3b8;
+      --green:#4ade80; --red:#f87171; --input:rgba(255,255,255,0.05);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:linear-gradient(135deg,#020617,#0f172a 50%,#1e293b);background-attachment:fixed;min-height:100vh;font-family:'Inter',sans-serif;color:var(--text);padding:30px 16px 60px;}
+    .wrap{max-width:900px;margin:0 auto;}
+    .eyebrow{font-size:11px;color:var(--primary);letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;}
+    .heading{font-size:22px;font-weight:600;margin-bottom:20px;}
+    .layout{display:grid;grid-template-columns:220px 1fr;gap:14px;}
+    @media(max-width:620px){.layout{grid-template-columns:1fr;}}
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(10px);}
+    .pp{padding:18px 20px;}
+    .pt{font-size:11px;font-weight:500;color:var(--primary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .sidebar{display:flex;flex-direction:column;gap:12px;}
+    .av-card{text-align:center;padding:24px 16px;}
+    .av-wrap{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(129,140,248,.2));border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--primary);margin:0 auto 12px;overflow:hidden;}
+    .s-name{font-size:15px;font-weight:500;}
+    .s-email{font-size:12px;color:var(--muted);margin-top:2px;}
+    .side-nav{overflow:hidden;}
+    .side-nav a{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:1px solid var(--border);transition:all .2s;text-decoration:none;}
+    .side-nav a:first-child{border-radius:16px 16px 0 0;}
+    .side-nav a:last-child{border-bottom:none;border-radius:0 0 16px 16px;}
+    .side-nav a:hover{background:rgba(56,189,248,.07);color:var(--text);padding-left:22px;}
+    .side-nav a.active{background:rgba(56,189,248,.1);color:var(--primary);border-left:3px solid var(--primary);}
+    .side-nav i{width:18px;font-size:15px;}
+    .main-col{display:flex;flex-direction:column;gap:14px;}
+    .view{display:none;flex-direction:column;gap:14px;}
+    .view.active{display:flex;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+    .form-row.full{grid-template-columns:1fr;}
+    .form-group{display:flex;flex-direction:column;gap:5px;}
+    .form-group label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+    .fi{background:var(--input);border:1px solid var(--border);border-radius:10px;padding:9px 13px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;}
+    .fi:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(56,189,248,.1);}
+    .fi:disabled{opacity:.5;cursor:not-allowed;}
+    .btn-save{background:var(--primary);border:none;color:#0f172a;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s;}
+    .btn-save:hover{opacity:.85;}
+    .btn-cancel{background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:10px 20px;font-size:13px;cursor:pointer;margin-right:8px;}
+    .btn-out{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--red);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s;display:flex;align-items:center;gap:8px;width:100%;justify-content:center;margin-top:10px;}
+    .btn-out:hover{background:rgba(248,113,113,.18);}
+    .sdiv{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;margin:16px 0 12px;}
+    .sdiv::after{content:'';flex:1;height:1px;background:var(--border);}
+    .info-note{background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--accent);display:none;}
+  </style>
 </head>
 <body>
-    <p>Если перенаправление не произошло, <a href="https://deloygame.neocities.org/account">нажмите сюда</a>.</p>
+<div class="wrap">
+  <div class="eyebrow">DeLoYGame</div>
+  <div class="heading">Hesabım</div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="panel av-card">
+        <div class="av-wrap" id="sidebar-avatar">?</div>
+        <div class="s-name"  id="sidebar-name">Yüklənir...</div>
+        <div class="s-email" id="sidebar-email"></div>
+      </div>
+      <div class="panel side-nav">
+        <a class="active" onclick="showView('overview',this)"><i class="fas fa-th-large"></i> İcmal</a>
+        <a onclick="showView('settings',this)"><i class="fas fa-cog"></i> Parametrlər</a>
+        <a onclick="showView('security',this)"><i class="fas fa-shield-alt"></i> Təhlükəsizlik</a>
+        <a onclick="logoutUser()" style="color:var(--red)"><i class="fas fa-sign-out-alt" style="color:var(--red)"></i> Çıxış</a>
+      </div>
+    </div>
+
+    <div class="main-col">
+
+      <div class="view active" id="view-overview">
+        <div class="panel pp" id="overview-content">
+          <div class="pt"><i class="fas fa-th-large"></i> İcmal</div>
+          <p style="color:var(--muted); font-size:13px; text-align:center; padding:40px 0;">
+            Xoş gəlmisiniz! Yeni məlumatlar tezliklə burada görünəcək.
+          </p>
+          </div>
+      </div>
+
+      <div class="view" id="view-settings">
+        <div class="panel pp">
+          <div class="pt"><i class="fas fa-user"></i> Şəxsi məlumatlar</div>
+          <div class="form-row">
+            <div class="form-group"><label>Ad</label><input id="settings-name" class="fi" placeholder="Adın"></div>
+            <div class="form-group"><label>Soyad</label><input id="settings-surname" class="fi" placeholder="Soyadın"></div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group"><label>E-mail (dəyişdirilmir)</label><input id="settings-email" class="fi" type="email" disabled></div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn-cancel">Ləğv et</button>
+            <button class="btn-save" onclick="saveProfile()">Yadda saxla</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-security">
+        <div class="panel pp">
+          <div class="pt"><i class="fas fa-lock"></i> Şifrə dəyiş</div>
+          <div class="info-note" id="google-pass-note"><i class="fas fa-info-circle"></i> Google ilə giriş etdiniz — şifrə dəyişdirmə mövcud deyil.</div>
+          <div id="pass-section">
+            <div class="form-row full" style="margin-bottom:10px"><div class="form-group"><label>Cari şifrə</label><input id="pass-current" class="fi" type="password" placeholder="••••••••"></div></div>
+            <div class="form-row full" style="margin-bottom:10px"><div class="form-group"><label>Yeni şifrə</label><input id="pass-new" class="fi" type="password" placeholder="Ən az 6 simvol"></div></div>
+            <div class="form-row full" style="margin-bottom:16px"><div class="form-group"><label>Yeni şifrə (təkrar)</label><input id="pass-new2" class="fi" type="password" placeholder="••••••••"></div></div>
+            <button class="btn-save" onclick="changePassword()">Şifrəni yenilə</button>
+          </div>
+          <div class="sdiv" style="margin-top:20px">Hesab</div>
+          <button class="btn-out" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Hesabdan çıx</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function showView(name, el) {
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.querySelectorAll('.side-nav a').forEach(a=>a.classList.remove('active'));
+    document.getElementById('view-'+name).classList.add('active');
+    el.classList.add('active');
+  }
+</script>
 </body>
 </html>
