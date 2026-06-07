@@ -1,1 +1,368 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeLoYGame | Sifarişlərim</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <style>
+        :root {
+            --bg-body: linear-gradient(135deg,#020617 0%,#0f172a 50%,#1e293b 100%);
+            --text-main: #f8fafc;
+            --glass-bg: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.1);
+            --menu-bg: #1e293b;
+            --footer-bg: #020617;
+            --footer-text: #94a3b8;
+            --primary: #38bdf8;
+            --accent: #818cf8;
+            --shadow: 0 10px 30px rgba(0,0,0,0.5);
+            --card-bg: rgba(30,41,59,0.8);
+            --muted: #94a3b8;
+            --green: #4ade80;
+            --yellow: #fbbf24;
+            --red: #f87171;
+            --inp-bg: rgba(255,255,255,0.04);
+        }
+        body.light-theme {
+            --bg-body: linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);
+            --text-main: #0f172a;
+            --glass-bg: rgba(255,255,255,0.7);
+            --glass-border: rgba(0,0,0,0.1);
+            --menu-bg: #fff;
+            --footer-bg: #f1f5f9;
+            --footer-text: #475569;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --card-bg: #fff;
+            --muted: #64748b;
+            --inp-bg: rgba(0,0,0,0.04);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Inter',sans-serif;background:var(--bg-body);background-attachment:fixed;color:var(--text-main);min-height:100vh;display:flex;flex-direction:column;transition:all .4s;overflow-x:hidden;}
 
+        /* Burger */
+        .menu-wrapper{position:fixed;top:25px;left:25px;z-index:2000;}
+        .burger-btn{width:40px;height:30px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;padding:5px;}
+        .burger-btn span{display:block;height:4px;background:var(--primary);border-radius:4px;transition:.4s;}
+        .burger-btn.open span:nth-child(1){transform:translateY(10px) rotate(45deg);background:#ef4444;}
+        .burger-btn.open span:nth-child(2){opacity:0;transform:translateX(-20px);}
+        .burger-btn.open span:nth-child(3){transform:translateY(-11px) rotate(-45deg);background:#ef4444;}
+        .nav-menu{position:absolute;top:50px;left:0;background:var(--menu-bg);min-width:240px;border-radius:16px;box-shadow:var(--shadow);display:none;flex-direction:column;overflow:hidden;border:1px solid var(--glass-border);backdrop-filter:blur(10px);}
+        .nav-menu.active{display:flex;animation:slideIn .4s ease forwards;}
+        .nav-menu a{padding:16px 24px;text-decoration:none;color:var(--text-main);font-weight:600;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--glass-border);transition:.3s;}
+        .nav-menu a:hover{background:var(--primary);color:#fff;padding-left:35px;}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+
+        /* Balance badge */
+        .balance-badge{position:fixed;top:25px;right:25px;z-index:1500;background:rgba(30,41,59,.9);backdrop-filter:blur(10px);border:1px solid rgba(74,222,128,.3);border-radius:14px;padding:10px 18px;display:flex;align-items:center;gap:10px;font-weight:700;}
+        .balance-badge i{color:var(--green);}
+        .balance-val{color:var(--green);font-size:15px;}
+        .balance-badge a{margin-left:6px;font-size:11px;color:var(--primary);text-decoration:none;padding:4px 8px;background:rgba(56,189,248,.1);border-radius:6px;}
+        .balance-badge a:hover{background:rgba(56,189,248,.2);}
+
+        /* Page header */
+        .page-header{padding:120px 20px 30px;max-width:900px;margin:0 auto;width:100%;}
+        .page-header h1{font-size:28px;font-weight:800;margin-bottom:6px;}
+        .page-header p{color:var(--muted);font-size:14px;}
+
+        /* Filter tabs */
+        .filter-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+        .filter-tab{padding:8px 18px;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;}
+        .filter-tab.active{background:var(--primary);color:#020617;border-color:var(--primary);}
+        .filter-tab:hover:not(.active){border-color:var(--primary);color:var(--text-main);}
+
+        /* Orders container */
+        .orders-container{max-width:900px;margin:0 auto;padding:0 20px 80px;width:100%;}
+
+        /* Order card */
+        .order-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:20px;padding:20px;margin-bottom:16px;backdrop-filter:blur(5px);box-shadow:var(--shadow);transition:.3s;}
+        .order-card:hover{border-color:rgba(56,189,248,.3);}
+        .order-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+        .order-id{font-family:monospace;font-size:13px;color:var(--primary);font-weight:700;}
+        .order-date{font-size:12px;color:var(--muted);}
+
+        /* Status badges */
+        .status-badge{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+        .status-pending{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.25);}
+        .status-completed{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25);}
+        .status-cancelled{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25);}
+
+        .order-body{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+        .order-game-icon{width:52px;height:52px;border-radius:14px;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid rgba(56,189,248,.2);}
+        .order-details{flex:1;min-width:0;}
+        .order-game{font-size:14px;font-weight:700;margin-bottom:4px;}
+        .order-items{font-size:12px;color:var(--muted);line-height:1.6;}
+        .order-gameid{font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px;}
+        .order-gameid span{color:var(--primary);font-family:monospace;font-weight:600;}
+        .order-meta{text-align:right;flex-shrink:0;}
+        .order-price{font-size:18px;font-weight:800;color:var(--primary);}
+        .order-pay-method{font-size:11px;color:var(--muted);margin-top:2px;}
+
+        /* Progress bar for pending */
+        .order-progress{margin-top:14px;padding-top:14px;border-top:1px solid var(--glass-border);}
+        .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px;}
+        .progress-bar{height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;}
+        .progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--accent));width:35%;animation:pulse-progress 2s ease-in-out infinite;}
+        @keyframes pulse-progress{0%,100%{opacity:1}50%{opacity:.5}}
+
+        /* Completed message */
+        .completed-note{margin-top:12px;padding:10px 14px;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:10px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px;}
+
+        /* Empty state */
+        .empty-state{text-align:center;padding:60px 20px;}
+        .empty-state .empty-icon{font-size:56px;margin-bottom:16px;}
+        .empty-state h3{font-size:20px;font-weight:700;margin-bottom:8px;}
+        .empty-state p{color:var(--muted);font-size:14px;margin-bottom:20px;}
+        .empty-state a{display:inline-block;padding:12px 24px;background:var(--primary);color:#020617;border-radius:12px;text-decoration:none;font-weight:700;font-size:13px;}
+
+        /* Loading skeleton */
+        .skeleton{background:linear-gradient(90deg,var(--glass-bg) 25%,rgba(255,255,255,.08) 50%,var(--glass-bg) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        .skeleton-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:20px;padding:20px;margin-bottom:16px;}
+        .skeleton-line{height:14px;border-radius:6px;margin-bottom:10px;}
+
+        /* Footer */
+        .cyber-footer{background:var(--footer-bg);color:var(--footer-text);padding:40px 20px 30px;margin-top:auto;border-top:2px solid var(--primary);}
+        .footer-bottom{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;}
+        .footer-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+        .lang-selector{display:flex;gap:8px;}
+        .lang-btn{cursor:pointer;padding:6px 12px;border-radius:8px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:12px;font-weight:700;color:var(--text-main);transition:.3s;}
+        .lang-btn.active,.lang-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+        .theme-btn{background:var(--primary);border:none;color:#fff;padding:8px 18px;border-radius:12px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;transition:.3s;}
+        .copyright{font-size:12px;opacity:.6;}
+    </style>
+</head>
+<body onclick="closeAll(event)">
+
+<!-- Burger -->
+<div class="menu-wrapper">
+    <div class="burger-btn" id="burgerBtn" onclick="toggleMenu(event)">
+        <span></span><span></span><span></span>
+    </div>
+    <nav class="nav-menu" id="navMenu">
+        <a href="home.html"><i class="fas fa-home"></i> <span data-key="nav_home">Ana Səhifə</span></a>
+        <a href="game.html"><i class="fas fa-gamepad"></i> <span data-key="nav_games">Oyunlar</span></a>
+        <a href="sifarisler.html"><i class="fas fa-list-alt"></i> <span data-key="nav_orders">Sifarişlərim</span></a>
+        <a href="balance.html"><i class="fas fa-wallet"></i> <span data-key="nav_balance">Balans</span></a>
+        <a href="support.html"><i class="fas fa-headset"></i> <span data-key="nav_support">Dəstək</span></a>
+        <a href="index.html"><i class="fas fa-sign-out-alt"></i> <span data-key="nav_exit">Çıxış</span></a>
+    </nav>
+</div>
+
+<!-- Balance badge -->
+<div class="balance-badge">
+    <i class="fas fa-wallet"></i>
+    <span class="balance-val" id="balanceVal">—</span>
+    <a href="balance.html"><i class="fas fa-plus"></i></a>
+</div>
+
+<main>
+    <div class="page-header">
+        <h1>📋 <span data-key="page_title">Sifarişlərim</span></h1>
+        <p data-key="page_sub">Bütün sifarişlərinizin vəziyyəti</p>
+
+        <div class="filter-tabs" style="margin-top:20px;">
+            <button class="filter-tab active" onclick="filterOrders('all')" data-key="filter_all">Hamısı</button>
+            <button class="filter-tab" onclick="filterOrders('pending')" data-key="filter_pending">Gözlənilir</button>
+            <button class="filter-tab" onclick="filterOrders('completed')" data-key="filter_completed">Tamamlandı</button>
+            <button class="filter-tab" onclick="filterOrders('cancelled')" data-key="filter_cancelled">Ləğv edildi</button>
+        </div>
+    </div>
+
+    <div class="orders-container" id="ordersContainer">
+        <!-- Skeleton loading -->
+        <div class="skeleton-card" id="skeleton">
+            <div class="skeleton skeleton-line" style="width:40%"></div>
+            <div class="skeleton skeleton-line" style="width:70%"></div>
+            <div class="skeleton skeleton-line" style="width:55%"></div>
+        </div>
+    </div>
+</main>
+
+<footer class="cyber-footer">
+    <div class="footer-bottom">
+        <div class="footer-controls">
+            <div class="lang-selector">
+                <div class="lang-btn" id="btn-az" onclick="changeLang('az')">AZ</div>
+                <div class="lang-btn" id="btn-ru" onclick="changeLang('ru')">RU</div>
+                <div class="lang-btn" id="btn-en" onclick="changeLang('en')">EN</div>
+            </div>
+            <button class="theme-btn" onclick="toggleTheme()">
+                <i class="fas fa-adjust"></i> <span id="theme-text">QARA TEMA</span>
+            </button>
+        </div>
+        <p class="copyright">© 2026 DeLoYGame.</p>
+    </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCENG4xEaW00K9FY1AagNVQkIJ2076fwp8",
+    authDomain: "dly-login-3bb4b.firebaseapp.com",
+    projectId: "dly-login-3bb4b",
+    storageBucket: "dly-login-3bb4b.firebasestorage.app",
+    messagingSenderId: "898217736519",
+    appId: "1:898217736519:web:3a70514bf9ce3c6ae4f462"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let allOrders = [];
+let currentFilter = 'all';
+
+onAuthStateChanged(auth, async (user) => {
+    if(!user) { window.location.href = 'index.html'; return; }
+
+    // Load balance
+    try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        const bal = snap.exists() ? (snap.data().balance || 0) : 0;
+        document.getElementById('balanceVal').textContent = bal.toFixed(2) + '₼';
+    } catch(e) {}
+
+    // Real-time orders listener
+    const q = query(
+        collection(db, 'orders'),
+        where('uid', '==', user.uid),
+        orderBy('createdAt', 'desc')
+    );
+
+    onSnapshot(q, (snapshot) => {
+        allOrders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderOrders();
+        document.getElementById('skeleton').style.display = 'none';
+    }, (err) => {
+        console.error(err);
+        document.getElementById('skeleton').style.display = 'none';
+        renderOrders();
+    });
+});
+
+window._renderOrders = renderOrders;
+window._allOrders = () => allOrders;
+
+function renderOrders() {
+    const lang = localStorage.getItem('lang') || 'az';
+    const container = document.getElementById('ordersContainer');
+    const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => o.status === currentFilter);
+
+    // Remove existing order cards
+    container.querySelectorAll('.order-card').forEach(el => el.remove());
+
+    if(filtered.length === 0) {
+        if(!container.querySelector('.empty-state')) {
+            const t = window.tr || {};
+            container.insertAdjacentHTML('beforeend', `
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>${t.empty_title || 'Sifariş yoxdur'}</h3>
+                    <p>${t.empty_sub || 'Hələ heç bir sifariş verməmisiniz.'}</p>
+                    <a href="pubg.html">${t.go_shop || 'Mağazaya get'}</a>
+                </div>`);
+        }
+        return;
+    }
+    container.querySelector('.empty-state')?.remove();
+
+    filtered.forEach(order => {
+        const date = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('az-AZ',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+        const itemsList = (order.items||[]).map(i => `${i.name} x${i.qty}`).join(', ');
+
+        let statusHTML = '';
+        let extraHTML = '';
+        const t = window.tr || {};
+
+        if(order.status === 'pending') {
+            statusHTML = `<span class="status-badge status-pending"><i class="ti ti-clock"></i> ${t.status_pending||'Gözlənilir'}</span>`;
+            extraHTML = `
+                <div class="order-progress">
+                    <div class="progress-label"><span>${t.processing||'İşlənir...'}</span><span>35%</span></div>
+                    <div class="progress-bar"><div class="progress-fill"></div></div>
+                </div>`;
+        } else if(order.status === 'completed') {
+            statusHTML = `<span class="status-badge status-completed"><i class="ti ti-check"></i> ${t.status_completed||'Tamamlandı'}</span>`;
+            extraHTML = `<div class="completed-note"><i class="fas fa-check-circle"></i> ${t.completed_note||'UC hesabınıza göndərildi. Oyuna daxil olub yoxlayın.'}</div>`;
+        } else if(order.status === 'cancelled') {
+            statusHTML = `<span class="status-badge status-cancelled"><i class="ti ti-x"></i> ${t.status_cancelled||'Ləğv edildi'}</span>`;
+        }
+
+        const payIcon = order.payMethod === 'balance' ? '💰' : order.payMethod === 'card' ? '💳' : '📱';
+
+        container.insertAdjacentHTML('beforeend', `
+            <div class="order-card">
+                <div class="order-header">
+                    <div>
+                        <div class="order-id">📦 ${order.id.substring(0,12).toUpperCase()}</div>
+                        <div class="order-date">${date}</div>
+                    </div>
+                    ${statusHTML}
+                </div>
+                <div class="order-body">
+                    <div class="order-game-icon">🎮</div>
+                    <div class="order-details">
+                        <div class="order-game">${order.game || 'PUBG Mobile'}</div>
+                        <div class="order-items">${itemsList}</div>
+                        <div class="order-gameid">🎯 Game ID: <span>${order.gameId || '—'}</span></div>
+                    </div>
+                    <div class="order-meta">
+                        <div class="order-price">${(order.total||0).toFixed(2)}₼</div>
+                        <div class="order-pay-method">${payIcon} ${order.payMethod||''}</div>
+                    </div>
+                </div>
+                ${extraHTML}
+            </div>`);
+    });
+}
+
+window.filterOrders = function(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    renderOrders();
+};
+</script>
+
+<script>
+const translations = {
+    az: { nav_home:"Ana Səhifə", nav_games:"Oyunlar", nav_orders:"Sifarişlərim", nav_balance:"Balans", nav_support:"Dəstək", nav_exit:"Çıxış", page_title:"Sifarişlərim", page_sub:"Bütün sifarişlərinizin vəziyyəti", filter_all:"Hamısı", filter_pending:"Gözlənilir", filter_completed:"Tamamlandı", filter_cancelled:"Ləğv edildi", status_pending:"Gözlənilir", status_completed:"Tamamlandı", status_cancelled:"Ləğv edildi", processing:"İşlənir...", completed_note:"UC hesabınıza göndərildi. Oyuna daxil olub yoxlayın.", empty_title:"Sifariş yoxdur", empty_sub:"Hələ heç bir sifariş verməmisiniz.", go_shop:"Mağazaya get", theme_dark:"QARA TEMA", theme_light:"AĞ TEMA" },
+    ru: { nav_home:"Главная", nav_games:"Игры", nav_orders:"Мои заказы", nav_balance:"Баланс", nav_support:"Поддержка", nav_exit:"Выход", page_title:"Мои заказы", page_sub:"Статус всех ваших заказов", filter_all:"Все", filter_pending:"В ожидании", filter_completed:"Выполнен", filter_cancelled:"Отменён", status_pending:"В ожидании", status_completed:"Выполнен", status_cancelled:"Отменён", processing:"Обрабатывается...", completed_note:"UC отправлен на ваш аккаунт. Войдите в игру и проверьте.", empty_title:"Нет заказов", empty_sub:"Вы ещё не сделали ни одного заказа.", go_shop:"В магазин", theme_dark:"ТЁМНАЯ ТЕМА", theme_light:"СВЕТЛАЯ ТЕМА" },
+    en: { nav_home:"Home", nav_games:"Games", nav_orders:"My Orders", nav_balance:"Balance", nav_support:"Support", nav_exit:"Exit", page_title:"My Orders", page_sub:"Status of all your orders", filter_all:"All", filter_pending:"Pending", filter_completed:"Completed", filter_cancelled:"Cancelled", status_pending:"Pending", status_completed:"Completed", status_cancelled:"Cancelled", processing:"Processing...", completed_note:"UC has been sent to your account. Login to the game to check.", empty_title:"No orders", empty_sub:"You haven't placed any orders yet.", go_shop:"Go to Shop", theme_dark:"DARK THEME", theme_light:"LIGHT THEME" }
+};
+
+function changeLang(lang) {
+    localStorage.setItem('lang', lang);
+    window.tr = translations[lang];
+    document.querySelectorAll('[data-key]').forEach(el => {
+        if(translations[lang][el.getAttribute('data-key')]) el.textContent = translations[lang][el.getAttribute('data-key')];
+    });
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-'+lang)?.classList.add('active');
+    if(typeof window._renderOrders === 'function') window._renderOrders();
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    localStorage.setItem('theme', isLight?'light':'dark');
+    const lang = localStorage.getItem('lang')||'az';
+    document.getElementById('theme-text').textContent = isLight ? translations[lang].theme_light : translations[lang].theme_dark;
+}
+function toggleMenu(e) { e.stopPropagation(); document.getElementById('burgerBtn').classList.toggle('open'); document.getElementById('navMenu').classList.toggle('active'); }
+function closeAll(e) { if(!document.getElementById('navMenu').contains(e.target)){ document.getElementById('navMenu').classList.remove('active'); document.getElementById('burgerBtn').classList.remove('open'); } }
+
+window.onload = () => {
+    const lang = localStorage.getItem('lang')||'az';
+    window.tr = translations[lang];
+    changeLang(lang);
+    if(localStorage.getItem('theme')==='light') toggleTheme();
+};
+</script>
+</body>
+</html>
