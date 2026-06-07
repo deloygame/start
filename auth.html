@@ -1,1 +1,483 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeLoYGame — Giriş / Qeydiyyat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signInAnonymously,
+      signOut,
+      onAuthStateChanged,
+      updateProfile,
+      sendPasswordResetEmail,
+      GoogleAuthProvider,
+      signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyCENG4xEaW00K9FY1AagNVQkIJ2076fwp8",
+      authDomain:        "dly-login-3bb4b.firebaseapp.com",
+      projectId:         "dly-login-3bb4b",
+      storageBucket:     "dly-login-3bb4b.firebasestorage.app",
+      messagingSenderId: "898217736519",
+      appId:             "1:898217736519:web:3a70514bf9ce3c6ae4f462"
+    };
+
+    const app            = initializeApp(firebaseConfig);
+    const auth           = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    // ─── redirect flags ───────────────────────────────────────
+    let justRegistered = false;   // qeydiyyatdan sonra giriş ekranı göstər
+    let handlingAuth   = false;   // onAuthStateChanged loop-unu önlə
+
+    // ─── helpers ──────────────────────────────────────────────
+    function showToast(msg, type = "info") {
+      const c = document.getElementById("toast-container");
+      const t = document.createElement("div");
+      t.className = `toast toast-${type}`;
+      const icon = type === "success" ? "fa-check-circle"
+                 : type === "error"   ? "fa-exclamation-circle"
+                 :                      "fa-bell";
+      t.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => t.classList.add("show"), 50);
+      setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 400); }, 5000);
+    }
+
+    function setLoading(btnId, state) {
+      const b = document.getElementById(btnId);
+      if (!b) return;
+      b.disabled = state;
+      b.querySelector(".btn-text").style.display    = state ? "none" : "";
+      b.querySelector(".btn-spinner").style.display = state ? "inline-block" : "none";
+    }
+
+    function showError(inputId, msg) {
+      const el = document.getElementById(inputId + "-err");
+      if (el) { el.textContent = msg; el.style.display = msg ? "block" : "none"; }
+    }
+
+    function clearErrors() {
+      document.querySelectorAll(".field-error").forEach(e => { e.textContent = ""; e.style.display = "none"; });
+    }
+
+    function parseFirebaseError(code) {
+      const map = {
+        "auth/email-already-in-use":   "Bu e-mail artıq istifadə olunur.",
+        "auth/invalid-email":          "E-mail formatı yanlışdır.",
+        "auth/weak-password":          "Şifrə ən az 6 simvol olmalıdır.",
+        "auth/user-not-found":         "Bu e-mail ilə hesab tapılmadı.",
+        "auth/wrong-password":         "Şifrə yanlışdır.",
+        "auth/invalid-credential":     "E-mail və ya şifrə yanlışdır.",
+        "auth/too-many-requests":      "Çox cəhd edildi. Bir az gözləyin.",
+        "auth/popup-closed-by-user":   "Google girişi ləğv edildi.",
+        "auth/network-request-failed": "Şəbəkə xətası. İnternet bağlantısını yoxlayın.",
+        "auth/operation-not-allowed":  "Qonaq girişi aktiv deyil. Firebase-də Anonymous Auth-u aktiv et.",
+      };
+      return map[code] || "Xəta baş verdi. Yenidən cəhd edin.";
+    }
+
+    // ─── Auth state ───────────────────────────────────────────
+    onAuthStateChanged(auth, user => {
+      if (handlingAuth) return;
+
+      if (user && !justRegistered) {
+        // Giriş var — account.html-ə yönləndir
+        window.location.href = "account.html";
+      }
+    });
+
+    // ─── LOGIN ────────────────────────────────────────────────
+    window.handleLogin = async () => {
+      clearErrors();
+      const email = document.getElementById("login-email").value.trim();
+      const pass  = document.getElementById("login-pass").value;
+      let valid = true;
+      if (!email) { showError("login-email", "E-mail daxil edin."); valid = false; }
+      if (!pass)  { showError("login-pass",  "Şifrə daxil edin."); valid = false; }
+      if (!valid) return;
+
+      setLoading("login-btn", true);
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        showToast("Xoş gəldiniz! 🎮 Yönləndirilirsiniz...", "success");
+        // onAuthStateChanged yönləndirəcək
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+        setLoading("login-btn", false);
+      }
+    };
+
+    // ─── REGISTER ─────────────────────────────────────────────
+    window.handleRegister = async () => {
+      clearErrors();
+      const name  = document.getElementById("reg-name").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const pass  = document.getElementById("reg-pass").value;
+      const pass2 = document.getElementById("reg-pass2").value;
+
+      let valid = true;
+      if (!name)           { showError("reg-name",  "Ad daxil edin.");          valid = false; }
+      if (!email)          { showError("reg-email", "E-mail daxil edin.");      valid = false; }
+      if (pass.length < 6) { showError("reg-pass",  "Ən az 6 simvol.");         valid = false; }
+      if (pass !== pass2)  { showError("reg-pass2", "Şifrələr uyğun gəlmir."); valid = false; }
+      if (!valid) return;
+
+      setLoading("reg-btn", true);
+      justRegistered = true;   // redirect-i blokla
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(cred.user, { displayName: name });
+
+        // İstifadəçini çıxart — yenidən giriş etsin
+        handlingAuth = true;
+        await signOut(auth);
+        handlingAuth = false;
+        justRegistered = false;
+
+        // Uğur ekranını göstər
+        document.getElementById("register-form").style.display = "none";
+        document.getElementById("reg-success").style.display   = "block";
+        document.getElementById("reg-success-name").textContent = name;
+
+      } catch (e) {
+        justRegistered = false;
+        showToast(parseFirebaseError(e.code), "error");
+      } finally {
+        setLoading("reg-btn", false);
+      }
+    };
+
+    // ─── GOOGLE ───────────────────────────────────────────────
+    window.handleGoogle = async () => {
+      try {
+        await signInWithPopup(auth, googleProvider);
+        showToast("Google ilə giriş uğurlu! 🎮", "success");
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      }
+    };
+
+    // ─── GUEST ────────────────────────────────────────────────
+    window.handleGuest = async () => {
+      try {
+        await signInAnonymously(auth);
+        showToast("Qonaq kimi daxil oldunuz 👾", "success");
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      }
+    };
+
+    // ─── FORGOT PASSWORD ──────────────────────────────────────
+    window.handleForgotPassword = async () => {
+      const email = document.getElementById("login-email").value.trim();
+      if (!email) {
+        showForgotModal();
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Şifrə sıfırlama e-maili göndərildi ✉️", "success");
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      }
+    };
+
+    // Forgot modal (e-mail boşdursa)
+    window.sendResetFromModal = async () => {
+      const email = document.getElementById("modal-email").value.trim();
+      if (!email) { showToast("E-mail daxil edin.", "error"); return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Şifrə sıfırlama e-maili göndərildi ✉️", "success");
+        closeForgotModal();
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      }
+    };
+
+    // ─── TAB SWITCH ───────────────────────────────────────────
+    window.switchTab = (tab) => {
+      clearErrors();
+      ["login-form","register-form","reg-success"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+      });
+      document.getElementById(tab + "-form").style.display = "block";
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("tab-" + tab).classList.add("active");
+    };
+
+    window.togglePass = (id) => {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === "password" ? "text" : "password";
+    };
+
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      const loginVisible = document.getElementById("login-form")?.style.display !== "none";
+      if (loginVisible) handleLogin(); else handleRegister();
+    });
+
+    // ─── FORGOT MODAL ─────────────────────────────────────────
+    window.showForgotModal = () => {
+      document.getElementById("forgot-modal").style.display = "flex";
+      setTimeout(() => document.getElementById("forgot-modal").classList.add("show"), 10);
+    };
+    window.closeForgotModal = () => {
+      const m = document.getElementById("forgot-modal");
+      m.classList.remove("show");
+      setTimeout(() => m.style.display = "none", 300);
+    };
+  </script>
+
+  <style>
+    :root {
+      --bg:      linear-gradient(135deg,#020617 0%,#0f172a 50%,#1e293b 100%);
+      --card:    rgba(30,41,59,0.9);
+      --border:  rgba(255,255,255,0.1);
+      --primary: #38bdf8;
+      --accent:  #818cf8;
+      --text:    #f8fafc;
+      --muted:   #94a3b8;
+      --green:   #4ade80;
+      --red:     #f87171;
+      --inp:     rgba(255,255,255,0.05);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);background-attachment:fixed;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;color:var(--text);padding:20px;}
+    body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(1px 1px at 20% 30%,rgba(56,189,248,.4) 0%,transparent 100%),radial-gradient(1px 1px at 60% 70%,rgba(129,140,248,.3) 0%,transparent 100%),radial-gradient(1.5px 1.5px at 80% 20%,rgba(56,189,248,.3) 0%,transparent 100%);pointer-events:none;z-index:0;}
+
+    /* Toast */
+    #toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+    .toast{background:rgba(15,23,42,.96);backdrop-filter:blur(10px);border-radius:12px;padding:13px 20px;display:flex;align-items:center;gap:10px;font-size:13px;border-left:4px solid var(--primary);transform:translateX(120%);transition:transform .45s cubic-bezier(.68,-.55,.265,1.55);min-width:260px;}
+    .toast.show{transform:translateX(0);}
+    .toast-success{border-color:var(--green);} .toast-success i{color:var(--green);}
+    .toast-error{border-color:var(--red);}     .toast-error i{color:var(--red);}
+    .toast-info i{color:var(--primary);}
+
+    /* Card */
+    .card{position:relative;z-index:1;background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:24px;padding:36px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+    .card::before{content:'';position:absolute;top:-1px;left:30%;right:30%;height:2px;background:linear-gradient(90deg,transparent,var(--primary),transparent);border-radius:2px;}
+
+    /* Logo */
+    .logo{text-align:center;margin-bottom:24px;}
+    .logo-icon{font-size:36px;display:block;margin-bottom:6px;}
+    .logo h1{font-size:22px;font-weight:700;background:linear-gradient(90deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px;}
+    .logo p{font-size:12px;color:var(--muted);margin-top:2px;}
+
+    /* Tabs */
+    .tabs{display:flex;background:rgba(255,255,255,.04);border-radius:12px;padding:4px;gap:4px;margin-bottom:24px;border:1px solid var(--border);}
+    .tab-btn{flex:1;padding:9px;border:none;background:none;color:var(--muted);font-size:13px;font-weight:600;border-radius:9px;cursor:pointer;transition:all .25s;}
+    .tab-btn.active{background:var(--primary);color:#0f172a;}
+    .tab-btn:not(.active):hover{color:var(--text);}
+
+    /* Fields */
+    .field{margin-bottom:14px;}
+    .field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+    .input-wrap{position:relative;}
+    .input-wrap i.prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
+    .eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;transition:color .2s;}
+    .eye-btn:hover{color:var(--primary);}
+    input[type="text"],input[type="email"],input[type="password"]{width:100%;background:var(--inp);border:1px solid var(--border);border-radius:12px;padding:11px 14px 11px 40px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+    input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(56,189,248,.12);}
+    input::placeholder{color:rgba(148,163,184,.5);}
+    .field-error{display:none;font-size:11px;color:var(--red);margin-top:5px;padding-left:4px;}
+
+    /* Buttons */
+    .btn-primary{width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#0f172a;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:opacity .2s,transform .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+    .btn-primary:hover:not(:disabled){opacity:.88;}
+    .btn-primary:active:not(:disabled){transform:scale(.98);}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+
+    .btn-google{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,border-color .2s;margin-bottom:8px;}
+    .btn-google:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);}
+    .btn-google img{width:18px;height:18px;}
+
+    .btn-guest{width:100%;padding:11px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:12px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,border-color .2s;}
+    .btn-guest:hover{background:rgba(129,140,248,.15);border-color:var(--accent);}
+
+    .divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
+    .divider span{font-size:11px;color:var(--muted);white-space:nowrap;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    .btn-spinner{display:none;width:16px;height:16px;border:2px solid rgba(15,23,42,.3);border-top-color:#0f172a;border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* Forgot password link */
+    .forgot-link{text-align:right;margin-top:-6px;margin-bottom:12px;}
+    .forgot-link a{font-size:12px;color:var(--primary);cursor:pointer;text-decoration:none;opacity:.8;transition:opacity .2s;}
+    .forgot-link a:hover{opacity:1;text-decoration:underline;}
+
+    /* ── Registration success screen ── */
+    #reg-success{display:none;text-align:center;padding:10px 0;}
+    .success-icon{font-size:52px;margin-bottom:12px;animation:popIn .5s cubic-bezier(.68,-.55,.265,1.55) forwards;}
+    @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+    .success-title{font-size:18px;font-weight:600;margin-bottom:6px;color:var(--green);}
+    .success-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+    .success-sub b{color:var(--text);}
+    .btn-go-login{width:100%;padding:12px;background:var(--primary);border:none;border-radius:12px;color:#0f172a;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;}
+    .btn-go-login:hover{opacity:.88;}
+
+    /* ── Forgot Password Modal ── */
+    #forgot-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s;}
+    #forgot-modal.show{opacity:1;}
+    .modal-card{background:#1e293b;border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+    .modal-title{font-size:16px;font-weight:600;margin-bottom:4px;}
+    .modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+    .modal-input{width:100%;background:var(--inp);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;margin-bottom:12px;}
+    .modal-input:focus{border-color:var(--primary);}
+    .modal-btns{display:flex;gap:8px;}
+    .modal-send{flex:1;padding:10px;background:var(--primary);border:none;border-radius:10px;color:#0f172a;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s;}
+    .modal-send:hover{opacity:.88;}
+    .modal-cancel{padding:10px 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div id="toast-container"></div>
+
+  <!-- ── Forgot Password Modal ── -->
+  <div id="forgot-modal" onclick="if(event.target===this)closeForgotModal()">
+    <div class="modal-card">
+      <div class="modal-title">🔑 Şifrəni sıfırla</div>
+      <div class="modal-sub">E-mail ünvanını daxil et — sıfırlama linki göndərəcəyik.</div>
+      <input id="modal-email" class="modal-input" type="email" placeholder="nicat@example.com">
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="closeForgotModal()">Ləğv et</button>
+        <button class="modal-send" onclick="sendResetFromModal()">
+          <i class="fas fa-paper-plane"></i> Göndər
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="logo">
+      <span class="logo-icon">🎮</span>
+      <h1>DeLoYGame</h1>
+      <p>Azərbaycanın oyun portalı</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">
+        <i class="fas fa-sign-in-alt"></i> Giriş
+      </button>
+      <button class="tab-btn"         id="tab-register" onclick="switchTab('register')">
+        <i class="fas fa-user-plus"></i> Qeydiyyat
+      </button>
+    </div>
+
+    <!-- Google + Guest -->
+    <button class="btn-google" onclick="handleGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Google ilə davam et
+    </button>
+    <button class="btn-guest" onclick="handleGuest()">
+      <i class="fas fa-user-secret"></i> Qonaq kimi daxil ol
+    </button>
+
+    <div class="divider"><span>və ya</span></div>
+
+    <!-- ── LOGIN FORM ── -->
+    <div id="login-form">
+      <div class="field">
+        <label>E-mail</label>
+        <div class="input-wrap">
+          <i class="fas fa-envelope prefix"></i>
+          <input type="email" id="login-email" placeholder="nicat@example.com">
+        </div>
+        <span class="field-error" id="login-email-err"></span>
+      </div>
+      <div class="field">
+        <label>Şifrə</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock prefix"></i>
+          <input type="password" id="login-pass" placeholder="••••••••">
+          <button class="eye-btn" onclick="togglePass('login-pass')" type="button">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <span class="field-error" id="login-pass-err"></span>
+      </div>
+
+      <!-- Şifrəni unutdum -->
+      <div class="forgot-link">
+        <a onclick="handleForgotPassword()">Şifrəni unutdum?</a>
+      </div>
+
+      <button class="btn-primary" id="login-btn" onclick="handleLogin()">
+        <span class="btn-text"><i class="fas fa-gamepad"></i> Daxil ol</span>
+        <span class="btn-spinner"></span>
+      </button>
+    </div>
+
+    <!-- ── REGISTER FORM ── -->
+    <div id="register-form" style="display:none">
+      <div class="field">
+        <label>Ad</label>
+        <div class="input-wrap">
+          <i class="fas fa-user prefix"></i>
+          <input type="text" id="reg-name" placeholder="Nicat Əliyev">
+        </div>
+        <span class="field-error" id="reg-name-err"></span>
+      </div>
+      <div class="field">
+        <label>E-mail</label>
+        <div class="input-wrap">
+          <i class="fas fa-envelope prefix"></i>
+          <input type="email" id="reg-email" placeholder="nicat@example.com">
+        </div>
+        <span class="field-error" id="reg-email-err"></span>
+      </div>
+      <div class="field">
+        <label>Şifrə</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock prefix"></i>
+          <input type="password" id="reg-pass" placeholder="Ən az 6 simvol">
+          <button class="eye-btn" onclick="togglePass('reg-pass')" type="button">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <span class="field-error" id="reg-pass-err"></span>
+      </div>
+      <div class="field">
+        <label>Şifrəni təkrarla</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock prefix"></i>
+          <input type="password" id="reg-pass2" placeholder="••••••••">
+          <button class="eye-btn" onclick="togglePass('reg-pass2')" type="button">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <span class="field-error" id="reg-pass2-err"></span>
+      </div>
+      <button class="btn-primary" id="reg-btn" onclick="handleRegister()">
+        <span class="btn-text"><i class="fas fa-user-plus"></i> Hesab yarat</span>
+        <span class="btn-spinner"></span>
+      </button>
+    </div>
+
+    <!-- ── REGISTER SUCCESS ── -->
+    <div id="reg-success">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Hesab uğurla yaradıldı!</div>
+      <div class="success-sub">
+        Xoş gəldiniz, <b id="reg-success-name"></b>!<br>
+        İndi e-mail və şifrənizlə daxil ola bilərsiniz.
+      </div>
+      <button class="btn-go-login" onclick="switchTab('login')">
+        <i class="fas fa-sign-in-alt"></i> Daxil ol
+      </button>
+    </div>
+
+  </div>
+</body>
+</html>
