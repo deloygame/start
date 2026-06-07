@@ -357,6 +357,9 @@ body.light-theme .ticket-card {
         </div>
         <nav class="nav-menu" id="navMenu">
             <a href="home.html"><i class="fas fa-home"></i> <span data-key="nav_home">Ana Səhifə</span></a>
+            <a href="accounts.html"><i class="fas fa-id-card"></i> <span data-key="nav_account">Hesabım</span></a>
+            <a href="balance.html"><i class="fas fa-wallet"></i> <span data-key="nav_balance">Bakiyə</span></a>
+            <a href="orders.html"><i class="fas fa-shopping-bag"></i> <span data-key="nav_orders">Sifarişlər</span></a>
             <a href="game.html"><i class="fas fa-gamepad"></i> <span data-key="nav_games">Oyunlar</span></a>
             <a href="support.html"><i class="fas fa-headset"></i> <span data-key="nav_support">Dəstək</span></a>
             <a href="index.html"><i class="fas fa-sign-out-alt"></i> <span data-key="nav_exit">Çıxış</span></a>
@@ -510,38 +513,41 @@ body.light-theme .ticket-card {
         ];
 
         const translations = {
-            az: { 
-                nav_home: "Ana Səhifə", nav_games: "Oyunlar", nav_support: "Dəstək", nav_exit: "Çıxış", 
-                theme_dark: "QARA", theme_light: "BƏYAZ", search_ph: "Oyun axtar...", 
-                footer_copy: "Bütün hüquqlar qorunur.", welcome_toast: "Xoş gəldiniz!.",
-                footer_about_title: "Haqqımızda", footer_about_text: "DeLoYGame, Azərbaycanın oyun cəmiyyəti üçün yaradılmış müasir və sürətli oyun portalıdır. Bizim məqsədimiz ən son oyunları premium keyfiyyətdə sizə çatdırmaqdır.",
-                footer_games_title: "Oyunlar", footer_g1: "Aksiyon Oyunları", footer_g2: "İdman Oyunları", footer_g3: "Online Oyunlar", footer_g4: "Klassik Oyunlar",
-                footer_support_title: "Dəstək", footer_s1: "Tez-tez Verilən Suallar", footer_s2: "Bizimlə Əlaqə", footer_s3: "Xəta Bildir",
-                footer_info_title: "Məlumat", footer_i1: "İstifadəçi Razılaşması", footer_i2: "Məxfilik Siyasəti", footer_i3: "Cookie Qaydaları", footer_i4: "Müəllif Hüquqları", send_btn: "Göndər", form_title: "Dəstək Portalı", cat_tech: "Texniki Problem", cat_pay: "Ödəniş",
-                success_msg: "Mesaj gönderildi! ID: "
-            },
-            ru: { 
-                nav_home: "Главная", nav_games: "Игры", nav_support: "Поддержка", nav_exit: "Выход", 
-                theme_dark: "ТЕМНАЯ", theme_light: "СВЕТЛАЯ", search_ph: "Поиск игр...", 
-                footer_copy: "Все права защищены.", welcome_toast: "Добро пожаловать!.",
-                footer_about_title: "О нас", footer_about_text: "DeLoYGame — современный и быстрый игровой портал, созданный для игрового сообщества Азербайджана.",
-                footer_games_title: "Игры", footer_g1: "Экшн игры", footer_g2: "Спортивные игры", footer_g3: "Онлайн игры", footer_g4: "Классические игры",
-                footer_support_title: "Поддержка", footer_s1: "Часто задаваемые вопросы", footer_s2: "Связаться с нами", footer_s3: "Сообщить об ошибке", 
-                footer_info_title: "Информация", footer_i1: "Пользовательское соглашение", footer_i2: "Политика конфиденциальности", footer_i3: "Правила Cookie", footer_i4: "Авторские права", send_btn: "Отправить" , form_title: "destek ru", cat_tech: "Техническая проблема", 
-                cat_pay: "Оплата" , success_msg: "Сообшение отправлено!: ", 
-            },
-            en: { 
-                nav_home: "Home", nav_games: "Games", nav_support: "Support", nav_exit: "Exit", 
-                theme_dark: "DARK", theme_light: "LIGHT", search_ph: "Search games...", 
-                footer_copy: "All rights reserved.", welcome_toast: "Welcome!.",
-                footer_about_title: "About Us", footer_about_text: "DeLoYGame is a modern and fast gaming portal created for the gaming community of Azerbaijan.",
-                footer_games_title: "Games", footer_g1: "Action Games", footer_g2: "Sports Games", footer_g3: "Online Games", footer_g4: "Classic Games",
-                footer_support_title: "Support", footer_s1: "FAQs", footer_s2: "Contact Us", footer_s3: "Report a Bug",
-                footer_info_title: "Information", footer_i1: "User Agreement", footer_i2: "Privacy Policy", footer_i3: "Cookie Policy", footer_i4: "Copyright (DMCA)"
-                , send_btn: "Send", form_title: "destek ru", cat_tech: "Technical problmа", cat_pay: "Pay" ,
-                success_msg: "Message sent!: "
-            }
-        };
+        az: { 
+            nav_home: "Ana Səhifə", nav_account: "Hesabım", nav_balance: "Bakiyə", nav_orders: "Sifarişlər", 
+            nav_games: "Oyunlar", nav_support: "Dəstək", nav_exit: "Çıxış", 
+            welcome_h: "DeLoYGame Portalına Xoş Gəlmisiniz", welcome_p: "Azərbaycanın ən sürətli oyun mərkəzi.", 
+            theme_dark: "QARA", theme_light: "BƏYAZ", search_ph: "Oyun axtar...", 
+            footer_copy: "Bütün hüquqlar qorunur.", welcome_toast: "Xoş gəldiniz!.",
+            footer_about_title: "Haqqımızda", footer_about_text: "DeLoYGame, Azərbaycanın oyun cəmiyyəti üçün yaradılmış müasir və sürətli oyun portalıdır.",
+            footer_games_title: "Oyunlar", footer_g1: "Aksiyon Oyunları", footer_g2: "İdman Oyunları", footer_g3: "Online Oyunlar", footer_g4: "Klassik Oyunlar",
+            footer_support_title: "Dəstək", footer_s1: "Tez-tez Verilən Suallar", footer_s2: "Bizimlə Əlaqə", footer_s3: "Xəta Bildir", footer_info_title: "Məlumat", 
+            footer_i1: "İstifadəçi Razılaşması", footer_i2: "Məxfilik Siyasəti", footer_i3: "Cookie Qaydaları", footer_i4: "Müəllif Hüquqları"
+        },
+        ru: { 
+            nav_home: "Главная", nav_account: "Акаунт", nav_balance: "Баланс", nav_orders: "Заказы", 
+            nav_games: "Игры", nav_support: "Поддержка", nav_exit: "Выход", 
+            welcome_h: "Добро пожаловать в DeLoYGame", welcome_p: "Самый быстрый игровой центр Азербайджана.", 
+            theme_dark: "ТЕМНАЯ", theme_light: "СВЕТЛАЯ", search_ph: "Поиск игр...", 
+            footer_copy: "Все права защищены.", welcome_toast: "Добро пожаловать!.",
+            footer_about_title: "О нас", footer_about_text: "DeLoYGame — современный и быстрый игровой портал, созданный для игрового сообщества Азербайджана.",
+            footer_games_title: "Игры", footer_g1: "Экшн игры", footer_g2: "Спортивные игры", footer_g3: "Онлайн игры", footer_g4: "Классические игры",
+            footer_support_title: "Поддержка", footer_s1: "Часто задаваемые вопросы", footer_s2: "Связаться с нами", footer_s3: "Сообщить об ошибке", 
+            footer_info_title: "Информация", footer_i1: "Пользовательское соглашение", footer_i2: "Политика конфиденциальности", footer_i3: "Правила Cookie", 
+            footer_i4: "Авторские права"
+        },
+        en: { 
+            nav_home: "Home", nav_account: "Account", nav_balance: "Balance", nav_orders: "Orders", 
+            nav_games: "Games", nav_support: "Support", nav_exit: "Exit", 
+            welcome_h: "Welcome to DeLoYGame", welcome_p: "The fastest gaming hub in Azerbaijan.", 
+            theme_dark: "DARK", theme_light: "LIGHT", search_ph: "Search games...", 
+            footer_copy: "All rights reserved.", welcome_toast: "Welcome!.",
+            footer_about_title: "About Us", footer_about_text: "DeLoYGame is a modern and fast gaming portal created for the gaming community of Azerbaijan.",
+            footer_games_title: "Games", footer_g1: "Action Games", footer_g2: "Sports Games", footer_g3: "Online Games", footer_g4: "Classic Games",
+            footer_support_title: "Support", footer_s1: "FAQs", footer_s2: "Contact Us", footer_s3: "Report a Bug", footer_info_title: "Information", 
+            footer_i1: "User Agreement", footer_i2: "Privacy Policy", footer_i3: "Cookie Policy", footer_i4: "Copyright (DMCA)"
+        }
+    };;
 
         function searchGames() {
             const query = document.getElementById('searchInput').value.toLowerCase();
