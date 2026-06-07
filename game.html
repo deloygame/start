@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeLoYGame</title>
+    
+    <link rel="icon" type="image/png" href="dlygmlogolittle.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* ================= Rəng sistemi ================= */
+        :root {
+            --bg-body: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%);
+            --text-main: #f8fafc;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --menu-bg: #1e293b;
+            --footer-bg: #020617;
+            --footer-text: #94a3b8;
+            --primary: #38bdf8;
+            --accent: #818cf8;
+            --shadow: 0 10px 30px rgba(0,0,0,0.5);
+            --card-bg: rgba(30, 41, 59, 0.7); 
+            --card-text: #f8fafc; 
+            --muted-text: #94a3b8;
+            --discount-bg: #ef4444;
+        }
+
+        body.light-theme {
+            --bg-body: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            --text-main: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --menu-bg: #ffffff;
+            --footer-bg: #f1f5f9;
+            --footer-text: #475569;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --card-bg: #ffffff;             
+            --card-text: #0f172a;            
+            --muted-text: #64748b;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-body);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.4s ease;
+            overflow-x: hidden;
+        }
+
+        .none { display: none !important; }
+
+        /* ================= TOAST BİLDİRİŞ ================= */
+        #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; }
+        .toast {
+            background: rgba(30, 41, 59, 0.9);
+            color: white; padding: 15px 25px; border-radius: 12px;
+            border-left: 4px solid var(--primary); box-shadow: var(--shadow);
+            backdrop-filter: blur(10px); margin-top: 10px;
+            display: flex; align-items: center; gap: 12px;
+            transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast.show { transform: translateX(0); }
+
+        /* ================= BURGER MENYU ================= */
+        .menu-wrapper { position: fixed; top: 25px; left: 25px; z-index: 2000; }
+        .burger-btn { width: 40px; height: 30px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; padding: 5px; }
+        .burger-btn span { display: block; height: 4px; width: 100%; background: var(--primary); border-radius: 4px; transition: 0.4s; }
+        .burger-btn.open span:nth-child(1) { transform: translateY(10px) rotate(45deg); background: #ef4444; }
+        .burger-btn.open span:nth-child(2) { opacity: 0; transform: translateX(-20px); }
+        .burger-btn.open span:nth-child(3) { transform: translateY(-11px) rotate(-45deg); background: #ef4444; }
+
+        .nav-menu {
+            position: absolute; top: 50px; left: 0; background: var(--menu-bg);
+            min-width: 240px; border-radius: 16px; box-shadow: var(--shadow);
+            display: none; flex-direction: column; overflow: hidden; border: 1px solid var(--glass-border); backdrop-filter: blur(10px);
+        }
+        .nav-menu.active { display: flex; animation: slideInLeft 0.4s ease forwards; }
+        .nav-menu a { padding: 16px 24px; text-decoration: none; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--glass-border); transition: 0.3s; }
+        .nav-menu a:hover { background: var(--primary); color: white; padding-left: 35px; }
+
+        /* ================= AXTARIŞ SİSTEMİ ================= */
+        .search-box {
+            text-align: center;
+            padding-top: 100px; 
+            margin-bottom: 40px;
+            width: 100%;
+        }
+        .search-box input {
+            width: 85%;
+            max-width: 450px;
+            padding: 14px 20px;
+            border-radius: 25px; 
+            border: 2px solid var(--primary);
+            background: rgba(255, 255, 255, 0.05); 
+            color: var(--text-main);
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        .search-box input:focus {
+            box-shadow: 0 0 15px var(--primary); 
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ================= TOVARY / GAMES GRID ================= */
+        .games-container {
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px; 
+            padding: 0 20px 60px; 
+            width: 100%;
+            max-width: 1200px; 
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) { 
+            .games-container { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } 
+        }
+
+        /* КАРТОЧКА МАКЕТ */
+        .game-card {
+            background: var(--card-bg); 
+            color: var(--card-text);    
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(5px);
+            border-radius: 18px; 
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: flex; 
+            flex-direction: column;
+            text-decoration: none; 
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(56, 189, 248, 0.2);
+        }
+
+        .game-card.hide-anim {
+            opacity: 0;
+            transform: scale(0.8) translateY(10px); 
+            pointer-events: none;
+        }
+
+        /* Контейнер картинки */
+        .game-image {
+            width: 100%;
+            height: 140px;
+            overflow: hidden;
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .game-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .game-card:hover .game-image img {
+            transform: scale(1.1);
+        }
+
+        /* Бейдж скидки */
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--discount-bg);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 8px;
+            z-index: 2;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Инфо блок */
+        .game-info {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1;
+        }
+
+
+        .game-title { 
+            font-size: 15px; 
+            font-weight: bold; 
+            text-align: left; 
+            text-transform: none;
+            letter-spacing: 0px;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        /* Кнопка купить при ховере */
+        .card-btn {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: #020617;
+            border: none;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.3s;
+        }
+        .game-card:hover .card-btn {
+            opacity: 0.9;
+        }
+
+
+        /* ================= FOOTER ================= */
+        .cyber-footer {
+            background: var(--footer-bg);
+            color: var(--footer-text);
+            padding: 60px 20px 30px;
+            margin-top: auto;
+            border-top: 2px solid var(--primary);
+            font-family: 'Inter', sans-serif;
+        }
+        .footer-container {
+            max-width: 1200px; 
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+        .footer-section h4 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+            text-transform: uppercase;
+            color: var(--text-main);
+            letter-spacing: 1px;
+        }
+        .footer-section p { font-size: 14px; line-height: 1.6; }
+        .footer-links a {
+            display: block;
+            color: var(--footer-text);
+            text-decoration: none;
+            margin-bottom: 10px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .footer-links a:hover { color: var(--primary); transform: translateX(5px); }
+
+        .footer-bottom {
+            max-width: 1100px;
+            margin: 40px auto 0;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-controls { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .lang-selector { display: flex; gap: 8px; }
+        .lang-btn {
+            cursor: pointer; padding: 6px 12px; border-radius: 8px;
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            font-size: 12px; font-weight: bold; color: var(--text-main); transition: 0.3s;
+        }
+        .lang-btn.active, .lang-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .theme-btn {
+            background: var(--primary); border: none; color: white;
+            padding: 8px 18px; border-radius: 12px; cursor: pointer;
+            font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: 0.3s;
+        }
+        .theme-btn:hover { transform: scale(1.05); }
+
+        .copyright { font-size: 12px; opacity: 0.6; }
+        .social-icons { display: flex; gap: 12px; margin-top: 15px; }
+        .social-icons a { color: var(--text-main); font-size: 18px; transition: 0.3s; }
+        .social-icons a:hover { color: var(--primary); }
+
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body onclick="closeAll(event)">
+
+    <div id="toast-container"></div>
+
+    <div class="menu-wrapper">
+        <div class="burger-btn" id="burgerBtn" onclick="toggleMenu(event)">
+            <span></span><span></span><span></span>
+        </div>
+        <nav class="nav-menu" id="navMenu">
+            <a href="home.html"><i class="fas fa-home"></i> <span data-key="nav_home">Ana Səhifə</span></a>
+            <a href="accounts.html"><i class="fas fa-id-card"></i> <span data-key="nav_account">Hesabım</span></a>
+            <a href="balance.html"><i class="fas fa-wallet"></i> <span data-key="nav_balance">Bakiyə</span></a>
+            <a href="orders.html"><i class="fas fa-shopping-bag"></i> <span data-key="nav_orders">Sifarişlər</span></a>
+            <a href="game.html"><i class="fas fa-gamepad"></i> <span data-key="nav_games">Oyunlar</span></a>
+            <a href="support.html"><i class="fas fa-headset"></i> <span data-key="nav_support">Dəstək</span></a>
+            <a href="index.html"><i class="fas fa-sign-out-alt"></i> <span data-key="nav_exit">Çıxış</span></a>
+        </nav>
+    </div>
+
+    <main>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Oyun axtar..." onkeyup="searchGames()">
+        </div>
+
+        <div class="games-container" id="gameGrid">
+
+
+
+
+
+          <div class="game-card" data-name="minecraft" onclick="location.href='#'">
+                <div class="game-image"><img src="images/minecraft.jpg" alt="Minecraft"></div>
+                <div class="game-info">
+                    <h3 class="game-title">Minecraft</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="roblox" onclick="location.href='#'">
+                <div class="game-image"><img src="images/roblox.jpg" alt="Roblox"></div>
+                <div class="game-info">
+                    <h3 class="game-title">Roblox</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/fortnite.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title">Fortnite</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="pubg mobile" onclick="location.href='#'">
+                <div class="game-image"><img src="images/pubgmobile.jpg" alt="Pubg Mobile"></div>
+                <div class="game-info">
+                    <h3 class="game-title">Pubg Mobile</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="csgo" onclick="location.href='#'">
+                <div class="game-image"><img src="images/csgo.jpg" alt="CS:GO"></div>
+                <div class="game-info">
+                    <h3 class="game-title">CS:GO</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="valorant" onclick="location.href='#'">
+                <div class="game-image"><img src="images/valorant.jpg" alt="Valorant"></div>
+                <div class="game-info">
+                    <h3 class="game-title">Valorant</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="brawl stars" onclick="location.href='#'">
+                <div class="game-image"><img src="images/brawlstars.jpg" alt="Brawl Stars"></div>
+                <div class="game-info">
+                    <h3 class="game-title">Brawl Stars</h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+            <div class="game-card" data-name="fortnite" onclick="location.href='#'">
+                <div class="game-image"><img src="images/.jpg" alt="Fortnite"></div>
+                <div class="game-info">
+                    <h3 class="game-title"></h3>
+                    <button class="card-btn"><i class="fas fa-shopping-bag"></i> Bax</button>
+                </div>
+            </div>
+
+
+
+
+
+        </div>
+    </main>
+
+    <footer class="cyber-footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4 data-key="footer_about_title">Haqqımızda</h4>
+                <p data-key="footer_about_text">DeLoYGame, Azərbaycanın oyun cəmiyyəti üçün yaradılmış müasir və sürətli oyun portalıdır. Bizim məqsədimiz ən son oyunları premium keyfiyyətdə sizə çatdırmaqdır.</p>
+            </div>
+            <div class="footer-section footer-links">
+                <h4 data-key="footer_games_title">Oyunlar</h4>
+                <a href="game.html#action" data-key="footer_g1">Aksiyon Oyunları</a>
+                <a href="game.html#sports" data-key="footer_g2">İdman Oyunları</a>
+                <a href="game.html#online" data-key="footer_g3">Online Oyunlar</a>
+                <a href="game.html#classic" data-key="footer_g4">Klassik Oyunlar</a>
+            </div>
+            <div class="footer-section footer-links">
+                <h4 data-key="footer_info_title">Məlumat</h4>
+                <a href="terms.html" data-key="footer_i1">İstifadəçi Razılaşması</a>
+                <a href="privacy.html" data-key="footer_i2">Məxfilik Siyasəti</a>
+                <a href="cookies.html" data-key="footer_i3">Cookie Qaydaları</a>
+                <a href="dmca.html" data-key="footer_i4">Müəllif Hüquqları</a>
+            </div>
+            <div class="footer-section footer-links">
+                <h4 data-key="footer_support_title">Dəstək</h4>
+                <a href="support.html" data-key="footer_s1">Tez-tez Verilən Suallar</a>
+                <a href="support.html#contact" data-key="footer_s2">Bizimlə Əlaqə</a>
+                <a href="support.html#report" data-key="footer_s3">Xəta Bildir</a>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-tiktok"></i></a>
+                    <a href="#"><i class="fab fa-discord"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-controls">
+                <div class="lang-selector">
+                    <div class="lang-btn" id="btn-az" onclick="changeLang('az')">AZ</div>
+                    <div class="lang-btn" id="btn-ru" onclick="changeLang('ru')">RU</div>
+                    <div class="lang-btn" id="btn-en" onclick="changeLang('en')">EN</div>
+                </div>
+                <button class="theme-btn" onclick="toggleTheme()">
+                    <i class="fas fa-adjust"></i> <span id="theme-text" data-key="theme_dark">QARA TEMA</span>
+                </button>
+            </div>
+            <p class="copyright">© 2026 DeLoYGame. <span data-key="footer_copy">Bütün hüquqlar qorunur.</span></p>
+        </div>
+    </footer>
+
+    <script>
+        const translations = {
+        az: { 
+            nav_home: "Ana Səhifə", nav_account: "Hesabım", nav_balance: "Bakiyə", nav_orders: "Sifarişlər", 
+            nav_games: "Oyunlar", nav_support: "Dəstək", nav_exit: "Çıxış", 
+            welcome_h: "DeLoYGame Portalına Xoş Gəlmisiniz", welcome_p: "Azərbaycanın ən sürətli oyun mərkəzi.", 
+            theme_dark: "QARA", theme_light: "BƏYAZ", search_ph: "Oyun axtar...", 
+            footer_copy: "Bütün hüquqlar qorunur.", welcome_toast: "Xoş gəldiniz!.",
+            footer_about_title: "Haqqımızda", footer_about_text: "DeLoYGame, Azərbaycanın oyun cəmiyyəti üçün yaradılmış müasir və sürətli oyun portalıdır.",
+            footer_games_title: "Oyunlar", footer_g1: "Aksiyon Oyunları", footer_g2: "İdman Oyunları", footer_g3: "Online Oyunlar", footer_g4: "Klassik Oyunlar",
+            footer_support_title: "Dəstək", footer_s1: "Tez-tez Verilən Suallar", footer_s2: "Bizimlə Əlaqə", footer_s3: "Xəta Bildir", footer_info_title: "Məlumat", 
+            footer_i1: "İstifadəçi Razılaşması", footer_i2: "Məxfilik Siyasəti", footer_i3: "Cookie Qaydaları", footer_i4: "Müəllif Hüquqları"
+        },
+        ru: { 
+            nav_home: "Главная", nav_account: "Акаунт", nav_balance: "Баланс", nav_orders: "Заказы", 
+            nav_games: "Игры", nav_support: "Поддержка", nav_exit: "Выход", 
+            welcome_h: "Добро пожаловать в DeLoYGame", welcome_p: "Самый быстрый игровой центр Азербайджана.", 
+            theme_dark: "ТЕМНАЯ", theme_light: "СВЕТЛАЯ", search_ph: "Поиск игр...", 
+            footer_copy: "Все права защищены.", welcome_toast: "Добро пожаловать!.",
+            footer_about_title: "О нас", footer_about_text: "DeLoYGame — современный и быстрый игровой портал, созданный для игрового сообщества Азербайджана.",
+            footer_games_title: "Игры", footer_g1: "Экшн игры", footer_g2: "Спортивные игры", footer_g3: "Онлайн игры", footer_g4: "Классические игры",
+            footer_support_title: "Поддержка", footer_s1: "Часто задаваемые вопросы", footer_s2: "Связаться с нами", footer_s3: "Сообщить об ошибке", 
+            footer_info_title: "Информация", footer_i1: "Пользовательское соглашение", footer_i2: "Политика конфиденциальности", footer_i3: "Правила Cookie", 
+            footer_i4: "Авторские права"
+        },
+        en: { 
+            nav_home: "Home", nav_account: "Account", nav_balance: "Balance", nav_orders: "Orders", 
+            nav_games: "Games", nav_support: "Support", nav_exit: "Exit", 
+            welcome_h: "Welcome to DeLoYGame", welcome_p: "The fastest gaming hub in Azerbaijan.", 
+            theme_dark: "DARK", theme_light: "LIGHT", search_ph: "Search games...", 
+            footer_copy: "All rights reserved.", welcome_toast: "Welcome!.",
+            footer_about_title: "About Us", footer_about_text: "DeLoYGame is a modern and fast gaming portal created for the gaming community of Azerbaijan.",
+            footer_games_title: "Games", footer_g1: "Action Games", footer_g2: "Sports Games", footer_g3: "Online Games", footer_g4: "Classic Games",
+            footer_support_title: "Support", footer_s1: "FAQs", footer_s2: "Contact Us", footer_s3: "Report a Bug", footer_info_title: "Information", 
+            footer_i1: "User Agreement", footer_i2: "Privacy Policy", footer_i3: "Cookie Policy", footer_i4: "Copyright (DMCA)"
+        }
+    };;
+
+        function fuzzyMatch(str, pattern) {
+            pattern = pattern.toLowerCase().trim();
+            str = str.toLowerCase().trim();
+            if (str.includes(pattern)) return true;
+            if (pattern.length < 3) return false;
+            let maxMistakes = Math.floor(pattern.length / 3);
+            let mistakes = 0; let pIdx = 0; let sIdx = 0;
+            while (pIdx < pattern.length && sIdx < str.length) {
+                if (pattern[pIdx] === str[sIdx]) { pIdx++; } else { mistakes++; }
+                sIdx++;
+            }
+            return (pattern.length - pIdx) <= maxMistakes;
+        }
+
+        let searchTimeout;
+        function searchGames() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const input = document.getElementById("searchInput").value.toLowerCase().trim();
+                const cards = document.querySelectorAll(".game-card");
+                cards.forEach(card => {
+                    const gameName = card.getAttribute("data-name") || "";
+                    const isMatch = input === "" || fuzzyMatch(gameName, input);
+                    if (isMatch) {
+                        card.classList.remove("none");
+                        setTimeout(() => card.classList.remove("hide-anim"), 10);
+                    } else {
+                        card.classList.add("hide-anim");
+                        setTimeout(() => { if (card.classList.contains("hide-anim")) card.classList.add("none"); }, 400);
+                    }
+                });
+            }, 200);
+        }
+
+        function toggleMenu(e) { e.stopPropagation(); document.getElementById('burgerBtn').classList.toggle('open'); document.getElementById('navMenu').classList.toggle('active'); }
+        function closeAll(e) { if (!document.getElementById('navMenu').contains(e.target)) { document.getElementById('navMenu').classList.remove('active'); document.getElementById('burgerBtn').classList.remove('open'); } }
+
+        function changeLang(lang) {
+            localStorage.setItem('lang', lang);
+            document.querySelectorAll('[data-key]').forEach(el => el.textContent = translations[lang][el.getAttribute('data-key')]);
+            document.getElementById('searchInput').placeholder = translations[lang].search_ph;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(document.getElementById('btn-' + lang)) document.getElementById('btn-' + lang).classList.add('active');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            const lang = localStorage.getItem('lang') || 'az';
+            document.getElementById('theme-text').textContent = isLight ? translations[lang].theme_light : translations[lang].theme_dark;
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fas fa-bell"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, 5000);
+        }
+
+        window.onload = () => {
+            const lang = localStorage.getItem('lang') || 'az';
+            changeLang(lang);
+            if(localStorage.getItem('theme') === 'light') toggleTheme();
+            setTimeout(() => { showToast(translations[lang].welcome_toast); }, 1000); 
+        };
+    </script>
+</body>
+</html>
