@@ -1,1 +1,926 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeLoYGame | PUBG Mobile UC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <style>
+        :root {
+            --bg-body: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%);
+            --text-main: #f8fafc;
+            --glass-bg: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.1);
+            --menu-bg: #1e293b;
+            --footer-bg: #020617;
+            --footer-text: #94a3b8;
+            --primary: #38bdf8;
+            --accent: #818cf8;
+            --shadow: 0 10px 30px rgba(0,0,0,0.5);
+            --card-bg: rgba(30,41,59,0.7);
+            --muted-text: #94a3b8;
+            --discount-bg: #ef4444;
+            --green: #4ade80;
+            --red: #f87171;
+            --inp-bg: rgba(255,255,255,0.04);
+        }
+        body.light-theme {
+            --bg-body: linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);
+            --text-main: #0f172a;
+            --glass-bg: rgba(255,255,255,0.7);
+            --glass-border: rgba(0,0,0,0.1);
+            --menu-bg: #ffffff;
+            --footer-bg: #f1f5f9;
+            --footer-text: #475569;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --card-bg: #ffffff;
+            --muted-text: #64748b;
+            --inp-bg: rgba(0,0,0,0.04);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Inter',sans-serif;background:var(--bg-body);background-attachment:fixed;color:var(--text-main);min-height:100vh;display:flex;flex-direction:column;transition:all .4s;overflow-x:hidden;}
 
+        /* Cart button */
+        .cart-trigger{position:fixed;top:25px;right:25px;z-index:1500;background:linear-gradient(90deg,var(--primary),var(--accent));border:none;color:#020617;padding:12px 18px;border-radius:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(56,189,248,.3);transition:.3s;}
+        .cart-trigger:hover{transform:scale(1.05);}
+        .cart-count{background:#fff;color:#020617;padding:2px 7px;border-radius:8px;font-size:12px;}
+
+        /* Banner */
+        .product-banner{padding-top:120px;padding-bottom:40px;text-align:center;max-width:800px;margin:0 auto;width:100%;}
+        .game-header-img{width:100px;height:100px;border-radius:24px;object-fit:cover;border:2px solid var(--primary);box-shadow:0 0 20px rgba(56,189,248,.3);margin-bottom:15px;}
+        .product-banner h1{margin:0 0 10px;font-size:32px;font-weight:800;}
+        .product-banner p{color:var(--muted-text);font-size:15px;}
+
+        /* Grid */
+        .items-container{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;padding:0 20px 60px;max-width:1000px;margin:0 auto;width:100%;}
+        @media(min-width:768px){.items-container{grid-template-columns:repeat(4,1fr);gap:20px;}}
+
+        .item-card{background:var(--card-bg);border:1px solid var(--glass-border);backdrop-filter:blur(5px);border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;box-shadow:var(--shadow);transition:transform .3s,box-shadow .3s;}
+        .item-card:hover{transform:translateY(-6px);box-shadow:0 12px 25px rgba(56,189,248,.15);border-color:var(--primary);}
+        .item-icon-wrapper{width:70px;height:70px;background:rgba(56,189,248,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:15px;color:var(--primary);font-size:28px;transition:.3s;}
+        .item-card:hover .item-icon-wrapper{transform:scale(1.1) rotate(5deg);background:var(--primary);color:#020617;}
+        .item-value{font-size:20px;font-weight:800;margin:0 0 5px;}
+        .item-name{font-size:13px;color:var(--muted-text);margin:0 0 15px;font-weight:500;}
+        .item-price-box{margin:auto 0 15px;}
+        .item-price{font-size:18px;font-weight:700;color:var(--primary);display:block;}
+        .item-old-price{font-size:12px;color:var(--muted-text);text-decoration:line-through;opacity:.6;}
+        .item-badge{position:absolute;top:12px;left:12px;background:var(--discount-bg);color:#fff;font-size:10px;font-weight:700;padding:3px 6px;border-radius:6px;}
+        .buy-btn{width:100%;background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-main);padding:10px 0;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.3s;}
+        .item-card:hover .buy-btn{background:linear-gradient(90deg,var(--primary),var(--accent));color:#020617;border-color:transparent;}
+
+        /* SIDEBAR */
+        .cart-sidebar{position:fixed;top:0;right:-420px;width:380px;height:100vh;background:var(--menu-bg);box-shadow:-5px 0 25px rgba(0,0,0,.5);z-index:3000;transition:right .4s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding:20px;border-left:1px solid var(--glass-border);backdrop-filter:blur(10px);}
+        .cart-sidebar.open{right:0;}
+        .cart-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--glass-border);padding-bottom:15px;margin-bottom:15px;}
+        .cart-header h3{margin:0;font-size:18px;}
+        .close-cart-btn{background:none;border:none;color:var(--text-main);font-size:20px;cursor:pointer;opacity:.7;transition:.2s;}
+        .close-cart-btn:hover{opacity:1;color:var(--red);}
+        .cart-items-list{flex:1;overflow-y:auto;margin-bottom:15px;}
+        .cart-item{display:flex;align-items:center;justify-content:space-between;background:var(--glass-bg);border:1px solid var(--glass-border);padding:12px;border-radius:12px;margin-bottom:10px;gap:10px;}
+        .cart-item-info h4{margin:0 0 4px;font-size:14px;}
+        .cart-item-info p{margin:0;font-size:13px;color:var(--primary);font-weight:600;}
+        .quantity-controls{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.2);padding:4px 8px;border-radius:8px;}
+        .quantity-btn{background:none;border:none;color:var(--text-main);cursor:pointer;font-weight:700;font-size:14px;}
+        .quantity-num{font-size:13px;font-weight:600;min-width:15px;text-align:center;}
+        .remove-item-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;}
+        .cart-footer{border-top:1px solid var(--glass-border);padding-top:15px;}
+        .total-row{display:flex;justify-content:space-between;font-size:16px;font-weight:700;margin-bottom:15px;}
+        .checkout-btn{width:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border:none;color:#020617;padding:14px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;transition:.3s;}
+        .checkout-btn:hover{transform:translateY(-2px);}
+        .empty-cart-text{text-align:center;color:var(--muted-text);font-size:14px;margin-top:40px;}
+
+        /* CHECKOUT FLOW */
+        #checkout-flow-view{flex-direction:column;height:100%;}
+        .steps{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;border-bottom:1px solid var(--glass-border);padding-bottom:15px;}
+        .step{display:flex;align-items:center;gap:6px;}
+        .step-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:1.5px solid var(--glass-border);color:var(--muted-text);background:var(--inp-bg);}
+        .step-num.active{border-color:var(--primary);color:var(--primary);background:rgba(56,189,248,.12);}
+        .step-num.done{border-color:var(--green);background:rgba(74,222,128,.12);color:var(--green);}
+        .step-label{font-size:11px;color:var(--muted-text);}
+        .step-label.active{color:var(--text-main);}
+
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+        .form-row.full{grid-template-columns:1fr;}
+        .form-group{display:flex;flex-direction:column;gap:5px;}
+        .form-group label{font-size:10px;color:var(--muted-text);text-transform:uppercase;letter-spacing:.5px;}
+        .form-input{background:var(--inp-bg);border:1px solid var(--glass-border);border-radius:10px;padding:10px 12px;color:var(--text-main);font-size:13px;outline:none;width:100%;transition:.2s;font-family:'Inter',sans-serif;}
+        .form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(56,189,248,.12);}
+        .form-input.error{border-color:var(--red);}
+
+        /* Game ID block */
+        .gameid-block{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:14px;padding:14px;margin-bottom:16px;}
+        .gameid-block-title{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+        .gameid-block-title i{font-size:14px;}
+        .gameid-note{font-size:11px;color:var(--muted-text);margin-top:6px;line-height:1.4;}
+
+        /* Profile preview */
+        .profile-preview{background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:12px;margin-top:8px;display:none;align-items:center;gap:12px;}
+        .profile-preview.show{display:flex;}
+        .profile-avatar{width:42px;height:42px;border-radius:50%;background:rgba(56,189,248,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+        .profile-info h5{margin:0 0 2px;font-size:13px;font-weight:700;}
+        .profile-info p{margin:0;font-size:11px;color:var(--muted-text);}
+        .profile-badge{margin-left:auto;background:rgba(74,222,128,.15);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;display:flex;align-items:center;gap:4px;}
+
+        /* Payment methods */
+        .pay-methods{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+        .pay-btn{background:var(--inp-bg);border:1px solid var(--glass-border);border-radius:10px;padding:10px;color:var(--muted-text);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;transition:.2s;}
+        .pay-btn:hover,.pay-btn.active{border-color:var(--primary);color:var(--primary);background:rgba(56,189,248,.08);}
+
+        /* Balance payment method */
+        .balance-pay-block{background:var(--inp-bg);border:1px solid var(--glass-border);border-radius:14px;padding:14px;margin-bottom:12px;display:none;}
+        .balance-pay-block.show{display:block;}
+        .balance-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+        .balance-label{font-size:12px;color:var(--muted-text);}
+        .balance-amount{font-size:18px;font-weight:800;color:var(--green);}
+        .balance-amount.insufficient{color:var(--red);}
+        .balance-order-total{font-size:12px;color:var(--muted-text);}
+        .balance-order-amount{font-size:13px;font-weight:700;color:var(--text-main);}
+        .topup-link-btn{width:100%;padding:10px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:10px;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;margin-top:8px;}
+        .topup-link-btn:hover{background:rgba(248,113,113,.15);}
+
+        /* Card form */
+        .card-preview{background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(129,140,248,.15));border:1px solid rgba(56,189,248,.2);border-radius:14px;padding:14px;margin-bottom:16px;}
+        .card-preview-num{font-size:14px;letter-spacing:2px;font-family:monospace;margin-bottom:10px;}
+        .card-preview-row{display:flex;justify-content:space-between;}
+        .card-preview-label{font-size:9px;color:var(--muted-text);text-transform:uppercase;}
+        .card-preview-val{font-size:11px;}
+        .card-chip{width:26px;height:18px;background:rgba(250,204,21,.3);border:1px solid rgba(250,204,21,.4);border-radius:4px;margin-bottom:8px;}
+
+        .pay-now-btn{width:100%;padding:12px;background:var(--primary);border:none;border-radius:12px;color:#020617;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;transition:.2s;}
+        .pay-now-btn:hover{opacity:.9;}
+        .pay-now-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+        .alert-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:10px;font-size:11px;color:var(--red);display:none;align-items:center;gap:6px;margin-bottom:10px;}
+        .alert-box.show{display:flex;}
+
+        /* Success */
+        .success-screen{text-align:center;padding:20px 10px;}
+        .success-icon{font-size:44px;margin-bottom:12px;}
+        .success-title{font-size:18px;font-weight:700;margin-bottom:6px;}
+        .success-sub{font-size:13px;color:var(--muted-text);margin-bottom:16px;line-height:1.5;}
+        .order-code{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:8px 16px;display:inline-block;font-family:monospace;font-size:13px;color:var(--green);letter-spacing:1px;}
+
+        /* Burger */
+        .menu-wrapper{position:fixed;top:25px;left:25px;z-index:2000;}
+        .burger-btn{width:40px;height:30px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;padding:5px;}
+        .burger-btn span{display:block;height:4px;background:var(--primary);border-radius:4px;transition:.4s;}
+        .burger-btn.open span:nth-child(1){transform:translateY(10px) rotate(45deg);background:#ef4444;}
+        .burger-btn.open span:nth-child(2){opacity:0;transform:translateX(-20px);}
+        .burger-btn.open span:nth-child(3){transform:translateY(-11px) rotate(-45deg);background:#ef4444;}
+        .nav-menu{position:absolute;top:50px;left:0;background:var(--menu-bg);min-width:240px;border-radius:16px;box-shadow:var(--shadow);display:none;flex-direction:column;overflow:hidden;border:1px solid var(--glass-border);backdrop-filter:blur(10px);}
+        .nav-menu.active{display:flex;animation:slideIn .4s ease forwards;}
+        .nav-menu a{padding:16px 24px;text-decoration:none;color:var(--text-main);font-weight:600;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--glass-border);transition:.3s;}
+        .nav-menu a:hover{background:var(--primary);color:#fff;padding-left:35px;}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+
+        /* Footer */
+        .cyber-footer{background:var(--footer-bg);color:var(--footer-text);padding:60px 20px 30px;margin-top:auto;border-top:2px solid var(--primary);}
+        .footer-container{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px;}
+        .footer-section h4{font-size:16px;margin-bottom:20px;border-left:3px solid var(--primary);padding-left:12px;text-transform:uppercase;color:var(--text-main);letter-spacing:1px;}
+        .footer-section p{font-size:14px;line-height:1.6;}
+        .footer-links a{display:block;color:var(--footer-text);text-decoration:none;margin-bottom:10px;font-size:14px;transition:.3s;}
+        .footer-links a:hover{color:var(--primary);transform:translateX(5px);}
+        .footer-bottom{max-width:1100px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--glass-border);display:flex;flex-direction:column;align-items:center;gap:20px;}
+        .footer-controls{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+        .lang-selector{display:flex;gap:8px;}
+        .lang-btn{cursor:pointer;padding:6px 12px;border-radius:8px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:12px;font-weight:700;color:var(--text-main);transition:.3s;}
+        .lang-btn.active,.lang-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+        .theme-btn{background:var(--primary);border:none;color:#fff;padding:8px 18px;border-radius:12px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;transition:.3s;}
+        .theme-btn:hover{transform:scale(1.05);}
+        .copyright{font-size:12px;opacity:.6;}
+
+        /* Spinner */
+        .spinner{width:14px;height:14px;border:2px solid rgba(2,6,23,.3);border-top-color:#020617;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        /* Toast */
+        #toast-container{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;}
+        .toast{background:rgba(15,23,42,.96);backdrop-filter:blur(10px);border-radius:12px;padding:13px 20px;display:flex;align-items:center;gap:10px;font-size:13px;border-left:4px solid var(--primary);transform:translateY(20px);opacity:0;transition:all .4s;min-width:240px;}
+        .toast.show{transform:translateY(0);opacity:1;}
+        .toast-success{border-color:var(--green);} .toast-success i{color:var(--green);}
+        .toast-error{border-color:var(--red);} .toast-error i{color:var(--red);}
+    </style>
+</head>
+<body onclick="closeAll(event)">
+
+<div id="toast-container"></div>
+
+<!-- Cart trigger -->
+<button class="cart-trigger" onclick="toggleCart(event)">
+    <i class="fas fa-shopping-basket"></i>
+    <span data-key="cart_title">Səbət</span>
+    <span class="cart-count" id="cartCount">0</span>
+</button>
+
+<!-- CART SIDEBAR -->
+<div class="cart-sidebar" id="cartSidebar" onclick="event.stopPropagation()">
+
+    <!-- CART VIEW -->
+    <div id="cart-main-view">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-basket" style="color:var(--primary)"></i> <span data-key="cart_header">Səbətiniz</span></h3>
+            <button class="close-cart-btn" onclick="toggleCart(event)"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items-list" id="cartItemsList"></div>
+        <div class="cart-footer">
+            <div class="total-row">
+                <span data-key="cart_total">Cəmi:</span>
+                <span id="cartTotalPrice">0.00₼</span>
+            </div>
+            <button class="checkout-btn" onclick="startCheckout()">
+                <i class="fas fa-credit-card"></i> <span data-key="checkout_btn">Sifarişi rəsmiləşdir</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CHECKOUT FLOW -->
+    <div id="checkout-flow-view" style="display:none;flex-direction:column;height:100%;">
+        <div class="cart-header">
+            <h3><i class="ti ti-shield-lock" style="color:var(--primary)"></i> <span data-key="checkout_flow_title">Sifariş</span></h3>
+            <button class="close-cart-btn" onclick="resetToCart()"><i class="ti ti-arrow-left"></i></button>
+        </div>
+
+        <div class="steps" id="steps">
+            <div class="step">
+                <div class="step-num active" id="sn1">1</div>
+                <div class="step-label active" id="sl1" data-key="st_info">Məlumat</div>
+            </div>
+            <div class="step">
+                <div class="step-num" id="sn2">2</div>
+                <div class="step-label" id="sl2" data-key="st_pay">Ödəniş</div>
+            </div>
+            <div class="step">
+                <div class="step-num" id="sn3">3</div>
+                <div class="step-label" id="sl3" data-key="st_done">Təsdiq</div>
+            </div>
+        </div>
+
+        <!-- STEP 1: Name + Game ID -->
+        <div id="checkout-step1" style="flex:1;overflow-y:auto;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-key="lbl_name">Ad</label>
+                    <input class="form-input" id="inp-name" placeholder="Nicat" type="text">
+                </div>
+                <div class="form-group">
+                    <label data-key="lbl_surname">Soyad</label>
+                    <input class="form-input" id="inp-surname" placeholder="Əliyev" type="text">
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input class="form-input" id="inp-email" placeholder="nicat@example.com" type="email">
+                </div>
+            </div>
+
+            <!-- GAME ID BLOCK -->
+            <div class="gameid-block">
+                <div class="gameid-block-title"><i class="fas fa-gamepad"></i> <span data-key="gameid_title">PUBG Mobile ID</span></div>
+                <div class="form-group">
+                    <label data-key="gameid_label">Oyun ID nömrəsi (məcburi)</label>
+                    <input class="form-input" id="inp-gameid" placeholder="5123456789" type="text" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/\D/g,''); previewProfile()">
+                </div>
+                <div class="profile-preview" id="profilePreview">
+                    <div class="profile-avatar">🎮</div>
+                    <div class="profile-info">
+                        <h5 id="previewName">Player</h5>
+                        <p id="previewId">ID: —</p>
+                    </div>
+                    <div class="profile-badge"><i class="fas fa-check"></i> OK</div>
+                </div>
+                <div class="gameid-note" data-key="gameid_note">⚠️ ID düzgün daxil edin. Yanlış ID-yə UC göndərilə bilməz.</div>
+            </div>
+
+            <div class="alert-box" id="alert1"><i class="ti ti-alert-circle"></i> <span data-key="err_fields">Bütün sahələri doldurun.</span></div>
+            <button class="pay-now-btn" onclick="goStep2()">
+                <span data-key="btn_next">İrəli</span> <i class="ti ti-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- STEP 2: Payment -->
+        <div id="checkout-step2" style="display:none;flex:1;overflow-y:auto;">
+            <div class="pay-methods">
+                <button class="pay-btn active" id="pm-balance" onclick="setPay('balance')"><i class="ti ti-wallet"></i><span data-key="pm_balance">Balans</span></button>
+                <button class="pay-btn" id="pm-card" onclick="setPay('card')"><i class="ti ti-credit-card"></i><span>Kart</span></button>
+                <button class="pay-btn" id="pm-paypal" onclick="setPay('paypal')"><i class="ti ti-brand-paypal"></i><span>PayPal</span></button>
+                <button class="pay-btn" id="pm-m10" onclick="setPay('m10')"><i class="ti ti-device-mobile"></i><span>M10</span></button>
+            </div>
+
+            <!-- BALANCE METHOD -->
+            <div class="balance-pay-block show" id="balance-pay">
+                <div class="balance-row">
+                    <span class="balance-label" data-key="balance_label">Balansınız:</span>
+                    <span class="balance-amount" id="userBalanceDisplay">0.00₼</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-order-total" data-key="order_total">Sifariş məbləği:</span>
+                    <span class="balance-order-amount" id="balanceOrderTotal">0.00₼</span>
+                </div>
+                <div id="balance-insufficient" style="display:none;">
+                    <div style="font-size:11px;color:var(--red);margin:6px 0;" data-key="balance_insufficient">Balansınız kifayət etmir.</div>
+                    <a href="balance.html" class="topup-link-btn"><i class="fas fa-plus"></i> <span data-key="topup_btn">Balansı artır</span></a>
+                </div>
+            </div>
+
+            <!-- CARD METHOD -->
+            <div id="card-form" style="display:none;">
+                <div class="card-preview">
+                    <div class="card-chip"></div>
+                    <div class="card-preview-num" id="prev-num">•••• •••• •••• ••••</div>
+                    <div class="card-preview-row">
+                        <div>
+                            <div class="card-preview-label" data-key="lbl_holder">Sahibi</div>
+                            <div class="card-preview-val" id="prev-name">AD SOYAD</div>
+                        </div>
+                        <div>
+                            <div class="card-preview-label" data-key="lbl_expiry">Bitmə</div>
+                            <div class="card-preview-val" id="prev-exp">MM/İİ</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label data-key="lbl_card_num">Kart nömrəsi</label>
+                        <input class="form-input" id="inp-card" placeholder="0000 0000 0000 0000" maxlength="19" oninput="fmtCard(this)" type="text">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-key="lbl_expiry">Bitmə tarixi</label>
+                        <input class="form-input" id="inp-exp" placeholder="MM/İİ" maxlength="5" oninput="fmtExp(this)" type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>CVV</label>
+                        <input class="form-input" id="inp-cvv" placeholder="•••" maxlength="3" type="password">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALT PAY -->
+            <div id="alt-pay" style="display:none;padding:20px 0;text-align:center;">
+                <i class="ti ti-external-link" style="font-size:32px;color:var(--primary)"></i>
+                <p style="color:var(--muted-text);font-size:13px;margin-top:8px;" data-key="alt_redirect">Xarici ödəniş səhifəsinə yönləndiriləcəksiniz.</p>
+            </div>
+
+            <div class="alert-box" id="alert2"><i class="ti ti-alert-circle"></i> <span id="alert2-text" data-key="err_card">Kart məlumatlarını tam daxil edin.</span></div>
+            <button class="pay-now-btn" id="payBtn" onclick="goStep3()">
+                <span class="btn-text"><i class="ti ti-lock"></i> <span data-key="btn_pay">Ödə</span> <span id="payBtnAmount">0.00₼</span></span>
+                <span class="spinner" id="paySpinner"></span>
+            </button>
+        </div>
+
+        <!-- STEP 3: Success -->
+        <div id="checkout-step3" class="success-screen" style="display:none;">
+            <div class="success-icon">✅</div>
+            <div class="success-title" data-key="success_title">Sifariş qəbul edildi!</div>
+            <div class="success-sub" data-key="success_sub">Sifarişiniz işlənir. Aktivasiya kodu e-mailinizə göndəriləcək.</div>
+            <div class="order-code" id="order-code">DLY-000000</div>
+            <div style="margin-top:12px;font-size:12px;color:var(--muted-text);" data-key="success_check">Sifarişlərinizi izləmək üçün:</div>
+            <a href="sifarisler.html" style="display:block;margin-top:8px;padding:10px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:10px;color:var(--primary);text-decoration:none;font-size:13px;font-weight:700;">📋 <span data-key="my_orders">Sifarişlərim</span></a>
+            <button class="pay-now-btn" style="margin-top:12px;" onclick="resetToCart(true)">
+                <span data-key="btn_back_shop">Mağazaya qayıt</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Burger -->
+<div class="menu-wrapper">
+    <div class="burger-btn" id="burgerBtn" onclick="toggleMenu(event)">
+        <span></span><span></span><span></span>
+    </div>
+    <nav class="nav-menu" id="navMenu">
+        <a href="home.html"><i class="fas fa-home"></i> <span data-key="nav_home">Ana Səhifə</span></a>
+        <a href="game.html"><i class="fas fa-gamepad"></i> <span data-key="nav_games">Oyunlar</span></a>
+        <a href="sifarisler.html"><i class="fas fa-list-alt"></i> <span data-key="nav_orders">Sifarişlərim</span></a>
+        <a href="balance.html"><i class="fas fa-wallet"></i> <span data-key="nav_balance">Balans</span></a>
+        <a href="support.html"><i class="fas fa-headset"></i> <span data-key="nav_support">Dəstək</span></a>
+        <a href="index.html"><i class="fas fa-sign-out-alt"></i> <span data-key="nav_exit">Çıxış</span></a>
+    </nav>
+</div>
+
+<main>
+    <div class="product-banner">
+        <img src="images/pubg.jpg" alt="PUBG Mobile" class="game-header-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%230f172a%22 width=%22100%22 height=%22100%22 rx=%2220%22/><text y=%2260%22 x=%2250%22 text-anchor=%22middle%22 font-size=%2240%22>🎮</text></svg>'">
+        <h1>PUBG Mobile UC</h1>
+        <p data-key="product_subtitle">Hesabınıza sürətli və təhlükəsiz UC yükləməsi</p>
+    </div>
+
+    <div class="items-container">
+        <div class="item-card">
+            <div class="item-icon-wrapper"><i class="fas fa-coins"></i></div>
+            <h2 class="item-value">60 UC</h2>
+            <p class="item-name">PUBG Mobile UC</p>
+            <div class="item-price-box"><span class="item-price">1.70₼</span></div>
+            <button class="buy-btn" onclick="addToCart('PUBG 60 UC', 1.70)">
+                <i class="fas fa-shopping-cart"></i> <span data-key="buy_text">Səbətə at</span>
+            </button>
+        </div>
+        <div class="item-card">
+            <div class="item-badge">-5%</div>
+            <div class="item-icon-wrapper"><i class="fas fa-coins"></i></div>
+            <h2 class="item-value">120 UC</h2>
+            <p class="item-name">PUBG Mobile UC</p>
+            <div class="item-price-box"><span class="item-price">3.20₼</span><span class="item-old-price">3.40₼</span></div>
+            <button class="buy-btn" onclick="addToCart('PUBG 120 UC', 3.20)">
+                <i class="fas fa-shopping-cart"></i> <span data-key="buy_text">Səbətə at</span>
+            </button>
+        </div>
+        <div class="item-card">
+            <div class="item-badge">-10%</div>
+            <div class="item-icon-wrapper"><i class="fas fa-coins"></i></div>
+            <h2 class="item-value">360 UC</h2>
+            <p class="item-name">PUBG Mobile UC</p>
+            <div class="item-price-box"><span class="item-price">9.15₼</span><span class="item-old-price">10.20₼</span></div>
+            <button class="buy-btn" onclick="addToCart('PUBG 360 UC', 9.15)">
+                <i class="fas fa-shopping-cart"></i> <span data-key="buy_text">Səbətə at</span>
+            </button>
+        </div>
+        <div class="item-card">
+            <div class="item-badge">POPULAR</div>
+            <div class="item-icon-wrapper"><i class="fas fa-coins"></i></div>
+            <h2 class="item-value">660 UC</h2>
+            <p class="item-name">PUBG Mobile UC</p>
+            <div class="item-price-box"><span class="item-price">16.50₼</span></div>
+            <button class="buy-btn" onclick="addToCart('PUBG 660 UC', 16.50)">
+                <i class="fas fa-shopping-cart"></i> <span data-key="buy_text">Səbətə at</span>
+            </button>
+        </div>
+        <div class="item-card">
+            <div class="item-icon-wrapper"><i class="fas fa-coins"></i></div>
+            <h2 class="item-value">1800 UC</h2>
+            <p class="item-name">PUBG Mobile UC</p>
+            <div class="item-price-box"><span class="item-price">42.00₼</span></div>
+            <button class="buy-btn" onclick="addToCart('PUBG 1800 UC', 42.00)">
+                <i class="fas fa-shopping-cart"></i> <span data-key="buy_text">Səbətə at</span>
+            </button>
+        </div>
+        <div class="item-card">
+            <div class="item-badge">-15%</div>
+            <div class="item-icon-wrapper"><i class="fas fa-coins"></i></div>
+            <h2 class="item-value">3850 UC</h2>
+            <p class="item-name">PUBG Mobile UC</p>
+            <div class="item-price-box"><span class="item-price">84.00₼</span><span class="item-old-price">98.00₼</span></div>
+            <button class="buy-btn" onclick="addToCart('PUBG 3850 UC', 84.00)">
+                <i class="fas fa-shopping-cart"></i> <span data-key="buy_text">Səbətə at</span>
+            </button>
+        </div>
+    </div>
+</main>
+
+<footer class="cyber-footer">
+    <div class="footer-container">
+        <div class="footer-section">
+            <h4 data-key="footer_about_title">Haqqımızda</h4>
+            <p data-key="footer_about_text">DeLoYGame — müasir oyun portalı, geymerlar üçün yaradılmışdır.</p>
+        </div>
+        <div class="footer-section footer-links">
+            <h4 data-key="footer_support_title">Dəstək</h4>
+            <a href="support.html" data-key="footer_s1">Tez-tez Verilən Suallar</a>
+            <a href="support.html#contact" data-key="footer_s2">Bizimlə Əlaqə</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div class="footer-controls">
+            <div class="lang-selector">
+                <div class="lang-btn" id="btn-az" onclick="changeLang('az')">AZ</div>
+                <div class="lang-btn" id="btn-ru" onclick="changeLang('ru')">RU</div>
+                <div class="lang-btn" id="btn-en" onclick="changeLang('en')">EN</div>
+            </div>
+            <button class="theme-btn" onclick="toggleTheme()">
+                <i class="fas fa-adjust"></i> <span id="theme-text">QARA TEMA</span>
+            </button>
+        </div>
+        <p class="copyright">© 2026 DeLoYGame. <span data-key="footer_copy">Bütün hüquqlar qorunur.</span></p>
+    </div>
+</footer>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCENG4xEaW00K9FY1AagNVQkIJ2076fwp8",
+    authDomain: "dly-login-3bb4b.firebaseapp.com",
+    projectId: "dly-login-3bb4b",
+    storageBucket: "dly-login-3bb4b.firebasestorage.app",
+    messagingSenderId: "898217736519",
+    appId: "1:898217736519:web:3a70514bf9ce3c6ae4f462"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let userBalance = 0;
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUser = user;
+    // Load balance
+    try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+            userBalance = snap.data().balance || 0;
+        } else {
+            userBalance = 0;
+        }
+        updateBalanceDisplay();
+    } catch(e) {
+        console.error('Balance load error:', e);
+    }
+    // Pre-fill email
+    const emailInput = document.getElementById('inp-email');
+    if (emailInput && user.email) emailInput.value = user.email;
+    if (emailInput && user.displayName) {
+        const parts = user.displayName.split(' ');
+        const ni = document.getElementById('inp-name');
+        const si = document.getElementById('inp-surname');
+        if(ni && parts[0]) ni.value = parts[0];
+        if(si && parts[1]) si.value = parts.slice(1).join(' ');
+    }
+});
+
+window._getUser = () => currentUser;
+window._getBalance = () => userBalance;
+window._getDb = () => db;
+
+window._placeOrder = async function(orderData) {
+    const user = currentUser;
+    if (!user) throw new Error('Not authenticated');
+
+    if (orderData.payMethod === 'balance') {
+        const total = orderData.total;
+        if (userBalance < total) throw new Error('insufficient_balance');
+
+        // Atomic transaction: deduct balance + create order
+        await runTransaction(db, async (t) => {
+            const userRef = doc(db, 'users', user.uid);
+            const snap = await t.get(userRef);
+            const currentBal = (snap.exists() ? snap.data().balance : 0) || 0;
+            if (currentBal < total) throw new Error('insufficient_balance');
+            t.update(userRef, { balance: currentBal - total });
+
+            const orderRef = doc(collection(db, 'orders'));
+            t.set(orderRef, {
+                ...orderData,
+                uid: user.uid,
+                userEmail: user.email || '',
+                status: 'pending',
+                createdAt: serverTimestamp()
+            });
+        });
+        userBalance -= total;
+        updateBalanceDisplay();
+    } else {
+        // Non-balance: just create order (payment handled externally)
+        await addDoc(collection(db, 'orders'), {
+            ...orderData,
+            uid: user.uid,
+            userEmail: user.email || '',
+            status: 'pending',
+            createdAt: serverTimestamp()
+        });
+    }
+};
+
+function updateBalanceDisplay() {
+    const el = document.getElementById('userBalanceDisplay');
+    if(el) {
+        el.textContent = userBalance.toFixed(2) + '₼';
+        el.className = 'balance-amount'; // reset
+    }
+    checkBalanceSufficiency();
+}
+window._updateBalanceDisplay = updateBalanceDisplay;
+</script>
+
+<script>
+// ─── TRANSLATIONS ──────────────────────────────────────────────
+const translations = {
+    az: {
+        nav_home:"Ana Səhifə", nav_games:"Oyunlar", nav_orders:"Sifarişlərim", nav_balance:"Balans", nav_support:"Dəstək", nav_exit:"Çıxış",
+        cart_title:"Səbət", cart_header:"Sizin Səbətiniz", cart_total:"Cəmi:", checkout_btn:"Sifarişi rəsmiləşdir", empty_cart:"Səbətiniz boşdur",
+        checkout_flow_title:"Sifariş", st_info:"Məlumat", st_pay:"Ödəniş", st_done:"Təsdiq",
+        lbl_name:"Ad", lbl_surname:"Soyad", err_fields:"Bütün sahələri doldurun.", btn_next:"İrəli",
+        gameid_title:"PUBG Mobile ID", gameid_label:"Oyun ID nömrəsi (məcburi)", gameid_note:"⚠️ ID düzgün daxil edin. Yanlış ID-yə UC göndərilə bilməz.",
+        pm_balance:"Balans", lbl_holder:"Kart Sahibi", lbl_expiry:"Bitmə", lbl_card_num:"Kart nömrəsi",
+        balance_label:"Balansınız:", order_total:"Sifariş məbləği:", balance_insufficient:"Balansınız kifayət etmir.", topup_btn:"Balansı artır",
+        alt_redirect:"Xarici ödəniş səhifəsinə yönləndiriləcəksiniz.",
+        err_card:"Kart məlumatlarını tam daxil edin.", btn_pay:"Ödə",
+        success_title:"Sifariş qəbul edildi!", success_sub:"Sifarişiniz işlənir. Aktivasiya kodu e-mailinizə göndəriləcək.",
+        success_check:"Sifarişlərinizi izləmək üçün:", my_orders:"Sifarişlərim", btn_back_shop:"Mağazaya qayıt",
+        buy_text:"Səbətə at", product_subtitle:"Hesabınıza sürətli və təhlükəsiz UC yükləməsi",
+        footer_copy:"Bütün hüquqlar qorunur.", footer_about_title:"Haqqımızda",
+        footer_about_text:"DeLoYGame — müasir oyun portalı, geymerlar üçün yaradılmışdır.",
+        footer_support_title:"Dəstək", footer_s1:"Tez-tez Verilən Suallar", footer_s2:"Bizimlə Əlaqə",
+        theme_dark:"QARA TEMA", theme_light:"AĞ TEMA"
+    },
+    ru: {
+        nav_home:"Главная", nav_games:"Игры", nav_orders:"Мои заказы", nav_balance:"Баланс", nav_support:"Поддержка", nav_exit:"Выход",
+        cart_title:"Корзина", cart_header:"Ваша Корзина", cart_total:"Итого:", checkout_btn:"Оформить заказ", empty_cart:"Корзина пуста",
+        checkout_flow_title:"Оформление", st_info:"Инфо", st_pay:"Оплата", st_done:"Финиш",
+        lbl_name:"Имя", lbl_surname:"Фамилия", err_fields:"Заполните все поля.", btn_next:"Далее",
+        gameid_title:"PUBG Mobile ID", gameid_label:"ID игрока (обязательно)", gameid_note:"⚠️ Введите правильный ID. UC нельзя отправить на неверный ID.",
+        pm_balance:"Баланс", lbl_holder:"Владелец", lbl_expiry:"Срок", lbl_card_num:"Номер карты",
+        balance_label:"Ваш баланс:", order_total:"Сумма заказа:", balance_insufficient:"Недостаточно средств.", topup_btn:"Пополнить баланс",
+        alt_redirect:"Вы будете перенаправлены на внешнюю платёжную страницу.",
+        err_card:"Введите данные карты.", btn_pay:"Оплатить",
+        success_title:"Заказ принят!", success_sub:"Ваш заказ обрабатывается. Код активации будет выслан на почту.",
+        success_check:"Отслеживайте ваши заказы:", my_orders:"Мои заказы", btn_back_shop:"В магазин",
+        buy_text:"В корзину", product_subtitle:"Быстрое и безопасное пополнение UC",
+        footer_copy:"Все права защищены.", footer_about_title:"О нас",
+        footer_about_text:"DeLoYGame — современный игровой портал для геймеров.",
+        footer_support_title:"Поддержка", footer_s1:"Часто задаваемые вопросы", footer_s2:"Связаться с нами",
+        theme_dark:"ТЁМНАЯ ТЕМА", theme_light:"СВЕТЛАЯ ТЕМА"
+    },
+    en: {
+        nav_home:"Home", nav_games:"Games", nav_orders:"My Orders", nav_balance:"Balance", nav_support:"Support", nav_exit:"Exit",
+        cart_title:"Cart", cart_header:"Your Cart", cart_total:"Total:", checkout_btn:"Checkout", empty_cart:"Your cart is empty",
+        checkout_flow_title:"Checkout", st_info:"Info", st_pay:"Payment", st_done:"Finish",
+        lbl_name:"First Name", lbl_surname:"Last Name", err_fields:"Please fill all fields.", btn_next:"Next",
+        gameid_title:"PUBG Mobile ID", gameid_label:"Game ID (required)", gameid_note:"⚠️ Enter correct ID. UC cannot be sent to wrong ID.",
+        pm_balance:"Balance", lbl_holder:"Holder", lbl_expiry:"Expiry", lbl_card_num:"Card Number",
+        balance_label:"Your balance:", order_total:"Order total:", balance_insufficient:"Insufficient balance.", topup_btn:"Top up balance",
+        alt_redirect:"You will be redirected to an external payment page.",
+        err_card:"Enter valid card details.", btn_pay:"Pay Now",
+        success_title:"Order Placed!", success_sub:"Your order is being processed. Activation code will be sent to your email.",
+        success_check:"Track your orders:", my_orders:"My Orders", btn_back_shop:"Back to Shop",
+        buy_text:"Add to cart", product_subtitle:"Fast and secure UC top-up for your account",
+        footer_copy:"All rights reserved.", footer_about_title:"About Us",
+        footer_about_text:"DeLoYGame — modern gaming portal created for gamers.",
+        footer_support_title:"Support", footer_s1:"FAQs", footer_s2:"Contact Us",
+        theme_dark:"DARK THEME", theme_light:"LIGHT THEME"
+    }
+};
+
+// ─── STATE ─────────────────────────────────────────────────────
+let cart = [];
+let payMethod = 'balance';
+
+// ─── CART ──────────────────────────────────────────────────────
+function toggleCart(e) { if(e) e.stopPropagation(); document.getElementById('cartSidebar').classList.toggle('open'); }
+
+function addToCart(name, price) {
+    const existing = cart.find(i => i.name === name);
+    if(existing) existing.quantity++;
+    else cart.push({name, price, quantity:1});
+    updateCartUI();
+    document.getElementById('cartSidebar').classList.add('open');
+}
+
+function changeQuantity(name, delta) {
+    const item = cart.find(i => i.name === name);
+    if(!item) return;
+    item.quantity += delta;
+    if(item.quantity <= 0) { removeFromCart(name); return; }
+    updateCartUI();
+}
+
+function removeFromCart(name) {
+    cart = cart.filter(i => i.name !== name);
+    updateCartUI();
+}
+
+function getCartTotal() { return cart.reduce((s,i) => s + i.price * i.quantity, 0); }
+
+function updateCartUI() {
+    const lang = localStorage.getItem('lang') || 'az';
+    const list = document.getElementById('cartItemsList');
+    const count = document.getElementById('cartCount');
+    const total = document.getElementById('cartTotalPrice');
+    list.innerHTML = '';
+    if(cart.length === 0) {
+        list.innerHTML = `<p class="empty-cart-text">${translations[lang].empty_cart}</p>`;
+        count.textContent = '0';
+        total.textContent = '0.00₼';
+        return;
+    }
+    let tc=0, tp=0;
+    cart.forEach(item => {
+        tc += item.quantity; tp += item.price * item.quantity;
+        list.insertAdjacentHTML('beforeend', `
+            <div class="cart-item">
+                <div class="cart-item-info">
+                    <h4>${item.name}</h4>
+                    <p>${(item.price*item.quantity).toFixed(2)}₼</p>
+                </div>
+                <div class="quantity-controls">
+                    <button class="quantity-btn" onclick="changeQuantity('${item.name}',-1)">-</button>
+                    <span class="quantity-num">${item.quantity}</span>
+                    <button class="quantity-btn" onclick="changeQuantity('${item.name}',1)">+</button>
+                </div>
+                <button class="remove-item-btn" onclick="removeFromCart('${item.name}')"><i class="fas fa-trash-alt"></i></button>
+            </div>`);
+    });
+    count.textContent = tc;
+    const fmt = tp.toFixed(2) + '₼';
+    total.textContent = fmt;
+    document.getElementById('payBtnAmount').textContent = fmt;
+    document.getElementById('balanceOrderTotal').textContent = fmt;
+    checkBalanceSufficiency();
+}
+
+// ─── CHECKOUT ──────────────────────────────────────────────────
+function startCheckout() {
+    if(cart.length === 0) return;
+    document.getElementById('cart-main-view').style.display = 'none';
+    document.getElementById('checkout-flow-view').style.display = 'flex';
+    setStep(1);
+}
+
+function resetToCart(clear=false) {
+    if(clear) { cart=[]; updateCartUI(); }
+    document.getElementById('checkout-flow-view').style.display = 'none';
+    document.getElementById('cart-main-view').style.display = 'block';
+    document.getElementById('checkout-step1').style.display = 'block';
+    document.getElementById('checkout-step2').style.display = 'none';
+    document.getElementById('checkout-step3').style.display = 'none';
+    ['inp-card','inp-exp','inp-cvv'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function setStep(n) {
+    [1,2,3].forEach(i => {
+        const num = document.getElementById('sn'+i);
+        const lbl = document.getElementById('sl'+i);
+        if(i < n) { num.className='step-num done'; num.innerHTML='<i class="ti ti-check"></i>'; }
+        else if(i===n) { num.className='step-num active'; num.textContent=i; lbl.className='step-label active'; }
+        else { num.className='step-num'; num.textContent=i; lbl.className='step-label'; }
+    });
+}
+
+function goStep2() {
+    const nm = document.getElementById('inp-name').value.trim();
+    const em = document.getElementById('inp-email').value.trim();
+    const gid = document.getElementById('inp-gameid').value.trim();
+    const al = document.getElementById('alert1');
+    if(!nm || !em || !gid) { al.classList.add('show'); return; }
+    al.classList.remove('show');
+    document.getElementById('checkout-step1').style.display = 'none';
+    document.getElementById('checkout-step2').style.display = 'block';
+    setStep(2);
+    const pname = (nm + ' ' + (document.getElementById('inp-surname').value||'')).toUpperCase();
+    document.getElementById('prev-name').textContent = pname.trim() || 'AD SOYAD';
+    setPay('balance');
+    checkBalanceSufficiency();
+}
+
+function checkBalanceSufficiency() {
+    const bal = typeof window._getBalance === 'function' ? window._getBalance() : 0;
+    const total = getCartTotal();
+    const balEl = document.getElementById('userBalanceDisplay');
+    const insuffEl = document.getElementById('balance-insufficient');
+    const payBtn = document.getElementById('payBtn');
+    if(balEl) {
+        balEl.textContent = bal.toFixed(2) + '₼';
+        balEl.className = 'balance-amount' + (bal < total ? ' insufficient' : '');
+    }
+    if(insuffEl) insuffEl.style.display = (payMethod==='balance' && bal < total) ? 'block' : 'none';
+    if(payBtn && payMethod==='balance') payBtn.disabled = bal < total;
+}
+
+function setPay(m) {
+    payMethod = m;
+    ['balance','card','paypal','m10'].forEach(p => {
+        document.getElementById('pm-'+p)?.classList.toggle('active', p===m);
+    });
+    document.getElementById('balance-pay').className = 'balance-pay-block' + (m==='balance' ? ' show' : '');
+    document.getElementById('card-form').style.display = m==='card' ? '' : 'none';
+    document.getElementById('alt-pay').style.display = (m==='paypal'||m==='m10') ? '' : 'none';
+    const payBtn = document.getElementById('payBtn');
+    if(payBtn) payBtn.disabled = false;
+    checkBalanceSufficiency();
+}
+
+async function goStep3() {
+    const al2 = document.getElementById('alert2');
+    if(payMethod==='card') {
+        const card = document.getElementById('inp-card').value.replace(/\s/g,'');
+        const exp = document.getElementById('inp-exp').value;
+        const cvv = document.getElementById('inp-cvv').value;
+        if(!card||card.length<16||!exp||exp.length<5||!cvv||cvv.length<3) { al2.classList.add('show'); return; }
+    }
+    al2.classList.remove('show');
+
+    const btn = document.getElementById('payBtn');
+    const spinner = document.getElementById('paySpinner');
+    const btnText = btn.querySelector('.btn-text');
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'inline-block';
+
+    try {
+        const gameId = document.getElementById('inp-gameid').value.trim();
+        const orderData = {
+            game: 'PUBG Mobile',
+            gameId: gameId,
+            items: cart.map(i => ({name:i.name, price:i.price, qty:i.quantity})),
+            total: parseFloat(getCartTotal().toFixed(2)),
+            payMethod: payMethod,
+            customerName: document.getElementById('inp-name').value.trim() + ' ' + (document.getElementById('inp-surname').value||''),
+            customerEmail: document.getElementById('inp-email').value.trim(),
+        };
+
+        if(typeof window._placeOrder === 'function') {
+            await window._placeOrder(orderData);
+        }
+
+        const code = 'DLY-' + Math.floor(100000 + Math.random()*900000);
+        document.getElementById('order-code').textContent = code;
+        document.getElementById('checkout-step2').style.display = 'none';
+        document.getElementById('checkout-step3').style.display = 'block';
+        setStep(3);
+    } catch(e) {
+        const lang = localStorage.getItem('lang')||'az';
+        if(e.message === 'insufficient_balance') {
+            showToast(translations[lang].balance_insufficient, 'error');
+        } else {
+            showToast('Xəta baş verdi. Yenidən cəhd edin.', 'error');
+        }
+        btn.disabled = false;
+        btnText.style.display = '';
+        spinner.style.display = 'none';
+    }
+}
+
+// Profile preview (simulated — real PUBG API needs backend)
+function previewProfile() {
+    const val = document.getElementById('inp-gameid').value.trim();
+    const preview = document.getElementById('profilePreview');
+    if(val.length >= 8) {
+        document.getElementById('previewName').textContent = 'PUBG Player';
+        document.getElementById('previewId').textContent = 'ID: ' + val;
+        preview.classList.add('show');
+    } else {
+        preview.classList.remove('show');
+    }
+}
+
+// Card formatting
+function fmtCard(el) {
+    let v = el.value.replace(/\D/g,'').substring(0,16);
+    el.value = v.match(/.{1,4}/g)?.join(' ')||v;
+    document.getElementById('prev-num').textContent = el.value||'•••• •••• •••• ••••';
+}
+function fmtExp(el) {
+    let v = el.value.replace(/\D/g,'');
+    if(v.length>=2) v = v.substring(0,2)+'/'+v.substring(2,4);
+    el.value = v;
+    document.getElementById('prev-exp').textContent = el.value||'MM/İİ';
+}
+
+// ─── UI HELPERS ────────────────────────────────────────────────
+function toggleMenu(e) { e.stopPropagation(); document.getElementById('burgerBtn').classList.toggle('open'); document.getElementById('navMenu').classList.toggle('active'); }
+function closeAll(e) {
+    if(!document.getElementById('navMenu').contains(e.target)) {
+        document.getElementById('navMenu').classList.remove('active');
+        document.getElementById('burgerBtn').classList.remove('open');
+    }
+    if(!document.getElementById('cartSidebar').contains(e.target)&&!e.target.closest('.cart-trigger')) {
+        document.getElementById('cartSidebar').classList.remove('open');
+    }
+}
+
+function showToast(msg, type='info') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    const icon = type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-bell';
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(()=>t.classList.add('show'),50);
+    setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},4000);
+}
+
+function changeLang(lang) {
+    localStorage.setItem('lang', lang);
+    document.querySelectorAll('[data-key]').forEach(el => {
+        if(translations[lang][el.getAttribute('data-key')]) el.textContent = translations[lang][el.getAttribute('data-key')];
+    });
+    document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('btn-'+lang)?.classList.add('active');
+    updateCartUI();
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    localStorage.setItem('theme', isLight?'light':'dark');
+    const lang = localStorage.getItem('lang')||'az';
+    document.getElementById('theme-text').textContent = isLight ? translations[lang].theme_light : translations[lang].theme_dark;
+}
+
+window.onload = () => {
+    const lang = localStorage.getItem('lang')||'az';
+    changeLang(lang);
+    if(localStorage.getItem('theme')==='light') toggleTheme();
+    updateCartUI();
+};
+</script>
+</body>
+</html>
