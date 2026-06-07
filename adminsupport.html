@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <title>DeLoY Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --p: #38bdf8; --bg: #0f172a; --card: #1e293b; --danger: #f87171; --success: #4ade80; --warning: #fbbf24; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: white; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        #sidebar { width: 320px; border-right: 1px solid rgba(255,255,255,0.1); background: #020617; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 25px; color: var(--p); font-weight: 800; font-size: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        #users-container { flex: 1; overflow-y: auto; }
+        
+        .user-card { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; display: flex; align-items: center; gap: 12px; position: relative; transition: 0.2s; }
+        .user-card:hover { background: rgba(255,255,255,0.02); }
+        .user-card.active { background: var(--card); border-left: 4px solid var(--p); }
+        
+        .online-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
+        .offline-dot { width: 10px; height: 10px; background: #64748b; border-radius: 50%; }
+        .unread-dot { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; position: absolute; right: 20px; display: none; box-shadow: 0 0 8px var(--danger); }
+
+        /* Main Section */
+        #main-chat { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+        #chat-header { padding: 15px 25px; background: var(--card); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+        
+        #msgs { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        
+        /* Message Bubbles */
+        .m { padding: 12px 16px; border-radius: 15px; max-width: 70%; position: relative; font-size: 14px; line-height: 1.4; }
+        .customer { align-self: flex-start; background: var(--card); border-bottom-left-radius: 2px; }
+        .admin { align-self: flex-end; background: var(--p); color: #000; border-bottom-right-radius: 2px; font-weight: 500; }
+        
+        #typing-indicator { padding: 5px 25px; font-size: 12px; color: var(--p); height: 20px; opacity: 0; transition: 0.3s; }
+        .del-msg { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; width: 20px; height: 20px; border-radius: 50%; display: none; cursor: pointer; font-size: 10px; align-items: center; justify-content: center; }
+        .m:hover .del-msg { display: flex; }
+        .m img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+
+        /* Footer Controls */
+        .foot { padding: 15px 25px; background: var(--card); display: flex; gap: 15px; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        input[type="text"] { flex: 1; background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 10px; color: white; outline: none; }
+        #send-btn { background: var(--p); border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* Support Ticket Design */
+        .ticket-item { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 15px; border-left: 5px solid #64748b; transition: 0.3s; position: relative; }
+        .ticket-item.waiting { border-left-color: var(--warning); box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1); }
+        .ticket-item.read { border-left-color: var(--success); opacity: 0.8; }
+        .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; opacity: 0.7; }
+        .ticket-email { font-weight: bold; color: var(--p); font-size: 16px; margin-bottom: 5px; }
+        .ticket-cat { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 11px; margin-bottom: 10px; }
+        .ticket-body { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; }
+        .ticket-footer { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
+
+        /* Ticket Buttons */
+        .t-btn { padding: 8px 14px; border-radius: 8px; border: none; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        .t-btn-read { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+        .t-btn-read:hover { background: var(--success); color: #000; }
+        .t-btn-reply { background: rgba(56, 189, 248, 0.2); color: var(--p); }
+        .t-btn-reply:hover { background: var(--p); color: #000; }
+        .t-btn-del { background: rgba(248, 113, 113, 0.2); color: var(--danger); margin-left: auto; }
+        .t-btn-del:hover { background: var(--danger); color: white; }
+        
+#send-btn {background: transparent; 
+    border: none;
+    cursor: pointer;       
+    color: #0084ff;        
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+}
+
+#send-btn:hover {
+    opacity: 0.7;  }
+
+        /* Global Badge */
+        #ticket-nav-btn { position: relative; margin: 10px 25px; }
+        #open-tickets-btn { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        #ticket-count-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #020617; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="sidebar-header">DeLoY Admin</div>
+    
+    <div id="ticket-nav-btn">
+        <button id="open-tickets-btn" onclick="showTickets()">
+            <i class="fas fa-envelope-open-text"></i> Support Forms
+        </button>
+        <div id="ticket-count-badge" style="display:none">0</div>
+    </div>
+
+    <div id="users-container"></div>
+</div>
+
+<div id="main-chat">
+    <div id="chat-header">
+        <div>
+            <div id="user-info" style="font-weight: bold; font-size: 18px;">Select user</div>
+            <div id="user-id-sub" style="font-size: 10px; opacity: 0.5;">Real-time panel</div>
+        </div>
+        <div id="header-tools" style="display:none; gap:10px;">
+            <button onclick="renameUser()" style="background:var(--warning); border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:600;"><i class="fas fa-user-edit"></i> Change name</button>
+            <button onclick="clearHistory()" style="background:var(--danger); border:none; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:600;"><i class="fas fa-broom"></i> Clear history</button>
+        </div>
+    </div>
+    
+    <div id="msgs">
+        <div style="margin: auto; text-align: center; opacity: 0.2;">
+            <i class="fas fa-headset" style="font-size: 60px; margin-bottom: 15px;"></i>
+            <p>Söhbəti idarə etmək üçün sol tərəfdən seçim edin</p>
+        </div>
+    </div>
+    
+    <div id="typing-indicator">İstifadəçi yazır...</div>
+
+    <div class="foot" id="chat-foot" style="display:none;">
+        <label for="fa" style="color:var(--p); cursor:pointer; font-size:22px; padding:5px;"><i class="fas fa-paperclip"></i></label>
+        <input type="file" id="fa" style="display:none" accept="image/*">
+        <input type="text" id="ans" placeholder="Message" autocomplete="off">
+        <button id="send-btn" aria-label="Отправить">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+    </svg>
+</button>
+
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, set, remove, serverTimestamp, update, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const config = {
+        apiKey: "AIzaSyBzSJFd8E_yIhsIIw1w6rqauBrjqUbp3qQ",
+        authDomain: "dly-online-support.firebaseapp.com",
+        databaseURL: "https://dly-online-support-default-rtdb.firebaseio.com",
+        projectId: "dly-online-support",
+        appId: "1:715968393638:web:9547b00cdf70c0a34f5f67"
+    };
+
+    const app = initializeApp(config);
+    const db = getDatabase(app);
+    let activeUser = null;
+    let typingTimeout;
+    const userCards = {}; 
+    const container = document.getElementById('users-container');
+
+    // --- SUPPORT TICKETS REALTIME LOGIC ---
+    onValue(ref(db, 'support_messages'), snap => {
+        let newCount = 0;
+        snap.forEach(child => {
+            if (child.val().status !== 'read') newCount++;
+        });
+        const badge = document.getElementById('ticket-count-badge');
+        badge.innerText = newCount;
+        badge.style.display = newCount > 0 ? 'flex' : 'none';
+    });
+
+    // --- USERS LIST LOGIC ---
+    onChildAdded(ref(db, 'chats'), (snap) => {
+        const uid = snap.key;
+        if (userCards[uid]) return;
+
+        const div = document.createElement('div');
+        div.className = 'user-card';
+        div.innerHTML = `<div class="offline-dot"></div> <div style="display:flex; flex-direction:column"><span class="u-name" style="font-weight:600">${uid}</span><span style="font-size:10px; opacity:0.5">${uid}</span></div> <div class="unread-dot"></div>`;
+        container.prepend(div);
+        userCards[uid] = div;
+
+        onValue(ref(db, `names/${uid}`), nSnap => {
+            const name = nSnap.val() || uid;
+            div.querySelector('.u-name').innerText = name;
+            div.onclick = () => window.loadChat(uid, name);
+        });
+
+        onValue(ref(db, `status/${uid}`), sSnap => {
+            const s = sSnap.val();
+            const dot = div.querySelector('.online-dot, .offline-dot');
+            if(dot) dot.className = s?.online ? 'online-dot' : 'offline-dot';
+            div.querySelector('.unread-dot').style.display = s?.unread ? 'block' : 'none';
+        });
+    });
+
+    // --- LOAD CHAT ---
+    window.loadChat = (uid, name) => {
+        activeUser = uid;
+        Object.values(userCards).forEach(c => c.classList.remove('active'));
+        userCards[uid].classList.add('active');
+        
+        document.getElementById('header-tools').style.display = 'flex';
+        document.getElementById('chat-foot').style.display = 'flex';
+        document.getElementById('user-info').innerText = name;
+        document.getElementById('user-id-sub').innerText = "ID: " + uid;
+        
+        set(ref(db, `status/${uid}/unread`), false);
+
+        onValue(ref(db, `typing/${uid}/user`), snap => {
+            document.getElementById('typing-indicator').style.opacity = snap.val() ? "1" : "0";
+        });
+
+        onValue(ref(db, `chats/${uid}`), snap => {
+            const mDiv = document.getElementById('msgs');
+            mDiv.innerHTML = '';
+            snap.forEach(m => {
+                const d = m.val();
+                const mId = m.key;
+                const div = document.createElement('div');
+                div.className = `m ${d.s}`;
+                div.innerHTML = `<div class="del-msg" onclick="window.del('${mId}')"><i class="fas fa-times"></i></div>` + 
+                                (d.t==='img' ? `<a href="${d.c}" target="_blank"><img src="${d.c}"></a>` : `<span>${d.c}</span>`);
+                mDiv.appendChild(div);
+            });
+            mDiv.scrollTop = mDiv.scrollHeight;
+        });
+    };
+
+window.showTickets = () => {
+    activeUser = null;
+    document.getElementById('header-tools').style.display = 'none';
+    document.getElementById('chat-foot').style.display = 'none';
+    document.getElementById('user-info').innerText = "Daxil olan müraciətlər";
+    document.getElementById('user-id-sub').innerText = "Support Forms View";
+    Object.values(userCards).forEach(c => c.classList.remove('active'));
+
+    onValue(ref(db, 'support_messages'), snap => {
+        const mDiv = document.getElementById('msgs');
+        mDiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="margin:0">Müraciət formaları</h2>
+                <button onclick="window.clearAllTickets()" style="background:var(--danger); border:none; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:12px;"><i class="fas fa-trash-alt"></i> Hamısını sil</button>
+            </div>
+        `;
+    
+        if(!snap.exists()) {
+            mDiv.innerHTML += '<div style="text-align:center; padding:50px; opacity:0.3"><i class="fas fa-folder-open" style="font-size:40px"></i><p>Heç bir müraciət yoxdur</p></div>';
+            return;
+        } // <--- ВОТ ЭТА СКОБКА БЫЛА ПРОПУЩЕНА
+
+        snap.forEach(child => {
+            const data = child.val(); 
+            const tid = child.key;
+            
+            const currentUID = data.userId || 'Naməlum';
+            const div = document.createElement('div');
+            div.className = `ticket-item ${data.status === 'read' ? 'read' : 'waiting'}`;
+
+            div.innerHTML = `
+                <div class="ticket-header">
+                    <span><i class="far fa-clock"></i> ${new Date(data.timestamp).toLocaleString()}</span>
+                    <span style="text-transform:uppercase; font-weight:bold">${data.status === 'read' ? 'Oxundu' : 'Gözləyir'}</span>
+                </div>
+                <div class="ticket-email" style="margin-bottom:5px;">${data.email}</div>
+                
+                <div style="background: var(--warning); color: #000; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; display: inline-block; margin-bottom: 15px;">
+                    GÖNDƏRƏN: ${data.email.split('@')[0]} | UID: ${currentUID}
+                </div>
+
+                <div class="ticket-cat">Kateqoriya: ${data.category || 'Ümumi'}</div>
+                <div class="ticket-body">${data.message}</div>
+                <div class="ticket-footer">
+                    <button class="t-btn t-btn-read" onclick="window.markAsRead('${tid}')"><i class="fas fa-check-circle"></i> Oxundu et</button>
+                    <button class="t-btn t-btn-reply" onclick="window.replyToTicket('${data.email}', '${currentUID}')">
+                        <i class="fas fa-reply"></i> Cavab yaz
+                    </button>
+                    <button class="t-btn t-btn-del" onclick="window.deleteTicket('${tid}')"><i class="fas fa-trash"></i> Sil</button>
+                </div>
+            `;
+            mDiv.prepend(div);
+        });
+    }); // Закрываем onValue
+}; // Закрываем функцию
+
+    // Ticket Actions
+    window.markAsRead = (tid) => update(ref(db, `support_messages/${tid}`), { status: 'read' });
+    window.deleteTicket = (tid) => { if(confirm("Bu müraciəti silmək istəyirsiniz?")) remove(ref(db, `support_messages/${tid}`)); };
+    window.clearAllTickets = () => { if(confirm("BÜTÜN müraciətlər birdəfəlik silinsin?")) remove(ref(db, 'support_messages')); };
+    
+    window.replyToTicket = (email, autoUserId) => {
+    const replyMsg = prompt(`${email} üçün cavabınızı yazın:`);
+    if(!replyMsg) return;
+    
+    // Если ID пользователя передан из формы, используем его, иначе спрашиваем
+    let targetId = autoUserId;
+    if(!targetId) {
+        targetId = prompt("İstifadəçinin ID-sini daxil edin:");
+    }
+
+    if(targetId) {
+        push(ref(db, `chats/${targetId}`), {
+            s: 'admin',
+            t: 'text',
+            c: " SUPPORT CAVABI: " + replyMsg,
+            time: serverTimestamp()
+        });
+        alert("Cavab uğurla " + targetId + " ID-li istifadəçiyə göndərildi.");
+    } else {
+        alert("Xəta: İstifadəçi ID-si tapılmadı.");
+    }
+};
+
+    // Chat Actions
+    const ansInput = document.getElementById('ans');
+    const sendBtn = document.getElementById('send-btn');
+
+    const sendMessage = () => {
+        const val = ansInput.value.trim();
+        if(val && activeUser) {
+            push(ref(db, `chats/${activeUser}`), { s:'admin', t:'text', c:val, time:serverTimestamp() });
+            ansInput.value = '';
+            set(ref(db, `status/${activeUser}/adminTyping`), false);
+        }
+    };
+
+    sendBtn.onclick = sendMessage;
+    ansInput.onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
+    ansInput.oninput = () => {
+        if(!activeUser) return;
+        set(ref(db, `status/${activeUser}/adminTyping`), true);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => set(ref(db, `status/${activeUser}/adminTyping`), false), 2000);
+    };
+
+    window.del = (mid) => { if(confirm("Mesajı silmək")) remove(ref(db, `chats/${activeUser}/${mid}`)); };
+    window.clearHistory = () => { if(confirm("Tarixçəni təmizləmək")) remove(ref(db, `chats/${activeUser}`)); };
+    window.renameUser = () => { 
+        const n = prompt("Yeni ad daxil edin:"); 
+        if(n) set(ref(db , `names/${activeUser}`), n); 
+    };
+
+    document.getElementById('fa').onchange = (e) => {
+        if(!activeUser) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => push(ref(db, `chats/${activeUser}`), { s:'admin', t:'img', c:ev.target.result, time:serverTimestamp() });
+        reader.readAsDataURL(e.target.files[0]);
+    };
+</script>
+</body>
+</html> 
