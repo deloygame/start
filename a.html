@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему</title>
+    <style>
+        /* Сброс стилей и базовая настройка шрифтов */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Задний фон с красивым градиентом */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #ffffff;
+        }
+
+        /* Контейнер формы с эффектом размытия (Glassmorphism) */
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Заголовок */
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-header h2 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-header p {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        /* Группы полей (строго друг под другом) */
+        .input-group {
+            position: relative;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column; /* Элементы внутри группы идут вертикально */
+        }
+
+        /* Стильные лейблы над полями */
+        .input-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            transition: color 0.3s ease;
+        }
+
+        /* Поля ввода */
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            outline: none;
+            color: #ffffff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        /* Эффекты при фокусе на поле */
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .input-group input:focus + label, 
+        .input-group:focus-within label {
+            color: #6366f1;
+        }
+
+        /* Дополнительные ссылки (Забыли пароль) */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .forgot-pass {
+            font-size: 13px;
+            color: #a855f7;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-pass:hover {
+            color: #c084fc;
+            text-decoration: underline;
+        }
+
+        /* Крутая неоновая кнопка */
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.95;
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(1px);
+        }
+
+        /* Ссылка на регистрацию */
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .login-footer a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <h2>Добро пожаловать</h2>
+            <p>Войдите в свой аккаунт</p>
+        </div>
+
+        <form autocomplete="off">
+            <div class="input-group">
+                <label for="email">Электронная почта</label>
+                <input type="email" id="email" placeholder="example@mail.com" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-actions">
+                <a href="#" class="forgot-pass">Забыли пароль?</a>
+            </div>
+
+            <button type="submit" class="btn-submit">Войти</button>
+        </form>
+
+        <div class="login-footer">
+            Нет аккаунта? <a href="#">Создать профиль</a>
+        </div>
+    </div>
+
+</body>
+</html>
