@@ -2,30 +2,30 @@
 <html lang="az">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>DeLoYGame — Giriş / Qeydiyyat</title>
+  <title>DeLoYGame — Giriş</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+  <!-- Cloudflare Turnstile widget script -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
   <script type="module">
+    // NOTE: pin/update this version deliberately when you upgrade Firebase.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
       getAuth,
-      createUserWithEmailAndPassword,
-      signInWithEmailAndPassword,
       signInAnonymously,
-      signOut,
       onAuthStateChanged,
-      updateProfile,
-      sendPasswordResetEmail,
       GoogleAuthProvider,
-      FacebookAuthProvider,
-      TwitterAuthProvider,
       GithubAuthProvider,
       OAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      updateProfile,
+      sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -41,157 +41,68 @@
     const auth = getAuth(app);
 
     // ─── OAuth providers ───────────────────────────────────────
+    // Google and GitHub are built-in Firebase providers.
+    // Discord is NOT a native Firebase provider — add it as a custom OIDC
+    // provider in Firebase Console → Authentication → Sign-in method →
+    // Add new provider → OpenID Connect, using Discord's OAuth2 app
+    // credentials, and name it exactly "oidc.discord" to match below.
     const providers = {
-      google:    new GoogleAuthProvider(),
-      facebook:  new FacebookAuthProvider(),
-      twitter:   new TwitterAuthProvider(),
-      github:    new GithubAuthProvider(),
-      microsoft: new OAuthProvider("microsoft.com"),
-      yahoo:     new OAuthProvider("yahoo.com"),
+      google:  new GoogleAuthProvider(),
+      github:  new GithubAuthProvider(),
+      discord: new OAuthProvider("oidc.discord"),
     };
 
-    // ─── redirect flags ───────────────────────────────────────
-    let justRegistered = false;   // qeydiyyatdan sonra giriş ekranı göstər
-    let handlingAuth   = false;   // onAuthStateChanged loop-unu önlə
-
-    // ─── helpers ──────────────────────────────────────────────
+    // ─── toast (fixed: textContent, not innerHTML — no XSS) ───
     function showToast(msg, type = "info") {
       const c = document.getElementById("toast-container");
       const t = document.createElement("div");
       t.className = `toast toast-${type}`;
-      const icon = type === "success" ? "fa-circle-check"
-                 : type === "error"   ? "fa-circle-exclamation"
-                 :                      "fa-bell";
-      t.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+      const iconClass = type === "success" ? "fa-circle-check"
+                       : type === "error"   ? "fa-circle-exclamation"
+                       :                      "fa-bell";
+      const i = document.createElement("i");
+      i.className = `fas ${iconClass}`;
+      const span = document.createElement("span");
+      span.textContent = msg;
+      t.appendChild(i);
+      t.appendChild(span);
       c.appendChild(t);
       setTimeout(() => t.classList.add("show"), 50);
       setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 400); }, 5000);
     }
 
-    function setLoading(btnId, state) {
-      const b = document.getElementById(btnId);
-      if (!b) return;
-      b.disabled = state;
-      b.querySelector(".btn-text").style.display    = state ? "none" : "";
-      b.querySelector(".btn-spinner").style.display = state ? "inline-block" : "none";
-    }
-
-    function showError(inputId, msg) {
-      const el = document.getElementById(inputId + "-err");
-      if (el) { el.textContent = msg; el.style.display = msg ? "block" : "none"; }
-    }
-
-    function clearErrors() {
-      document.querySelectorAll(".field-error").forEach(e => { e.textContent = ""; e.style.display = "none"; });
-    }
-
     function parseFirebaseError(code) {
       const map = {
-        "auth/email-already-in-use":       "Bu e-mail artıq istifadə olunur error701.",
-        "auth/invalid-email":              "E-mail formatı yanlışdır error702.",
-        "auth/weak-password":              "Şifrə ən az 6 simvol olmalıdır error703.",
-        "auth/user-not-found":             "Bu e-mail ilə hesab tapılmadı error704.",
-        "auth/wrong-password":             "Şifrə yanlışdır error705.",
-        "auth/invalid-credential":         "E-mail və ya şifrə yanlışdır error706.",
-        "auth/too-many-requests":          "Çox cəhd edildi. Bir az gözləyin error707.",
-        "auth/popup-closed-by-user":       "Giriş pəncərəsi bağlandı error708.",
-        "auth/cancelled-popup-request":    "Giriş ləğv edildi error709.",
-        "auth/account-exists-with-different-credential":
-                                            "Bu e-mail başqa bir giriş üsulu ilə qeydiyyatdan keçib error710.",
-        "auth/network-request-failed":     "Şəbəkə xətası. İnternet bağlantısını yoxlayın error711.",
-        "auth/operation-not-allowed":      "Bu giriş üsulu hələ aktiv deyil error712.",
-        "auth/unauthorized-domain":        "Bu domen icazəli deyil. www.deloygame.xyz saytından keçid edin error999."
-        ,
+        "auth/popup-closed-by-user":       "Giriş pəncərəsi bağlandı.",
+        "auth/cancelled-popup-request":    "Giriş ləğv edildi.",
+        "auth/account-exists-with-different-credential": "Bu hesab başqa bir giriş üsulu ilə qeydiyyatdan keçib.",
+        "auth/network-request-failed":     "Şəbəkə xətası. İnternet bağlantısını yoxlayın.",
+        "auth/operation-not-allowed":      "Bu giriş üsulu hələ aktiv deyil.",
+        "auth/unauthorized-domain":        "Bu domen icazəli deyil.",
+        "auth/email-already-in-use":       "Bu e-poçt artıq qeydiyyatdan keçib. Daxil olmağa çalışın.",
+        "auth/invalid-email":              "E-poçt ünvanı düzgün deyil.",
+        "auth/weak-password":              "Şifrə çox zəifdir.",
+        "auth/wrong-password":             "Şifrə yanlışdır.",
+        "auth/invalid-credential":         "E-poçt və ya şifrə yanlışdır.",
+        "auth/user-not-found":             "Bu e-poçtla qeydiyyatlı hesab tapılmadı.",
+        "auth/too-many-requests":          "Çox sayda cəhd. Bir az sonra yenidən cəhd edin.",
+        "auth/missing-password":           "Şifrə daxil edin.",
       };
-      return map[code] || "Xəta baş verdi. error404 Yenidən cəhd edin.";
+      return map[code] || "Xəta baş verdi. Yenidən cəhd edin.";
     }
 
-    // ─── Auth state ───────────────────────────────────────────
+    // ─── Auth state: single source of truth for redirect ──────
     onAuthStateChanged(auth, user => {
-      if (handlingAuth) return;
-      if (user && !justRegistered) {
-        setTimeout(() => { window.location.href = "account.html"; }, 1500);
+      if (user) {
+        setTimeout(() => { window.location.href = "account.html"; }, 1200);
       }
     });
 
-    // ─── LOGIN ────────────────────────────────────────────────
-    window.handleLogin = async () => {
-      clearErrors();
-      const email = document.getElementById("login-email").value.trim();
-      const pass  = document.getElementById("login-pass").value;
-      let valid = true;
-      if (!email) { showError("login-email", "E-mail daxil edin."); valid = false; }
-      if (!pass)  { showError("login-pass",  "Şifrə daxil edin."); valid = false; }
-      if (!valid) return;
-
-      setLoading("login-btn", true);
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        showToast("Xoş gəldiniz!  Yönləndirilirsiniz", "success");
-      } catch (e) {
-        showToast(parseFirebaseError(e.code), "error");
-        setLoading("login-btn", false);
-      }
-    };
-
-    // ─── REGISTER ─────────────────────────────────────────────
-
-window.handleRegister = async () => {
-  const tos = document.getElementById("reg-tos").checked;
-  const captchaToken = grecaptcha.getResponse(); // Получаем ответ от капч
-
-if (!tos) {
-    showToast("Şərtlərlə razılaşın!", "error");
-    return;
-  }
-  if (!captchaToken) {
-    showToast("Robot olmadığınızı təsdiq edin.", "error");
-    return;
-  }
-
-      clearErrors();
-      const name  = document.getElementById("reg-name").value.trim();
-      const email = document.getElementById("reg-email").value.trim();
-      const pass  = document.getElementById("reg-pass").value;
-      const pass2 = document.getElementById("reg-pass2").value;
-
-      let valid = true;
-      if (!name)           { showError("reg-name",  "Ad daxil edin.");          valid = false; }
-      if (!email)          { showError("reg-email", "E-mail daxil edin.");      valid = false; }
-      if (pass.length < 6) { showError("reg-pass",  "Ən az 6 simvol.");         valid = false; }
-      if (pass !== pass2)  { showError("reg-pass2", "Şifrələr uyğun gəlmir."); valid = false; }
-      if (!valid) return;
-
-      setLoading("reg-btn", true);
-      justRegistered = true;
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: name });
-
-        handlingAuth = true;
-        await signOut(auth);
-        handlingAuth = false;
-        justRegistered = false;
-
-        document.getElementById("register-form").style.display = "none";
-        document.getElementById("reg-success").style.display   = "block";
-        document.getElementById("reg-success-name").textContent = name;
-      } catch (e) {
-        justRegistered = false;
-        showToast(parseFirebaseError(e.code), "error");
-      } finally {
-        setLoading("reg-btn", false);
-      }
-    };
-
     // ─── "Recently used" provider memory ───────────────────────
     const PROVIDER_META = {
-      google:    { name: "Google",     icon: "fab fa-google" },
-      facebook:  { name: "Facebook",   icon: "fab fa-facebook-f" },
-      github:    { name: "GitHub",     icon: "fab fa-github" },
-      twitter:   { name: "X (Twitter)",icon: "fab fa-x-twitter" },
-      microsoft: { name: "Microsoft",  icon: "fab fa-microsoft" },
-      yahoo:     { name: "Yahoo",      icon: "fab fa-yahoo" },
+      google:  { name: "Google",  icon: "fab fa-google" },
+      github:  { name: "GitHub",  icon: "fab fa-github" },
+      discord: { name: "Discord", icon: "fab fa-discord" },
     };
 
     function rememberProvider(key) {
@@ -205,7 +116,11 @@ if (!tos) {
       const chip = document.getElementById("recent-chip");
       if (!meta || !chip) return;
       window.__recentKey = key;
-      document.getElementById("recent-chip-icon").innerHTML = `<i class="${meta.icon}"></i>`;
+      const iconWrap = document.getElementById("recent-chip-icon");
+      iconWrap.innerHTML = "";
+      const i = document.createElement("i");
+      i.className = meta.icon;
+      iconWrap.appendChild(i);
       document.getElementById("recent-chip-name").textContent = meta.name;
       chip.style.display = "flex";
     }
@@ -225,13 +140,10 @@ if (!tos) {
       }
     }
 
-    // ─── SOCIAL / OAUTH (generic handler for every provider button) ──
+    // ─── SOCIAL / OAUTH ─────────────────────────────────────────
     window.handleSocial = async (key) => {
       const provider = providers[key];
-      if (!provider) {
-        showToast("Bu giriş üsulu tezliklə əlavə olunacaq 🚧", "info");
-        return;
-      }
+      if (!provider) return;
       const btn = document.getElementById("social-" + key);
       if (btn) btn.classList.add("is-loading");
       try {
@@ -255,65 +167,226 @@ if (!tos) {
       }
     };
 
-    // ─── FORGOT PASSWORD ──────────────────────────────────────
-    window.handleForgotPassword = async () => {
-      const email = document.getElementById("login-email").value.trim();
-      if (!email) { showForgotModal(); return; }
-      try {
-        await sendPasswordResetEmail(auth, email);
-        showToast("Şifrə sıfırlama e-maili göndərildi ✉️", "success");
-      } catch (e) {
-        showToast(parseFirebaseError(e.code), "error");
-      }
-    };
-
-    window.sendResetFromModal = async () => {
-      const email = document.getElementById("modal-email").value.trim();
-      if (!email) { showToast("E-mail daxil edin.", "error"); return; }
-      try {
-        await sendPasswordResetEmail(auth, email);
-        showToast("Şifrə sıfırlama e-maili göndərildi ✉️", "success");
-        closeForgotModal();
-      } catch (e) {
-        showToast(parseFirebaseError(e.code), "error");
-      }
-    };
-
-    // ─── TAB SWITCH ───────────────────────────────────────────
+    // ─── TABS: login / register ───────────────────────────────
     window.switchTab = (tab) => {
-      clearErrors();
-      ["login-form","register-form","reg-success"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = "none";
-      });
-      const target = document.getElementById(tab + "-form");
-      target.style.display = "block";
-      target.classList.remove("form-fade-in");
-      void target.offsetWidth; // restart animation
-      target.classList.add("form-fade-in");
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("tab-" + tab).classList.add("active");
+      document.getElementById("view-login").style.display    = tab === "login"    ? "block" : "none";
+      document.getElementById("view-register").style.display = tab === "register" ? "block" : "none";
+      document.getElementById("view-forgot").style.display    = "none";
+      document.getElementById("tab-login").classList.toggle("active", tab === "login");
+      document.getElementById("tab-register").classList.toggle("active", tab === "register");
     };
 
-    window.togglePass = (id) => {
-      const inp = document.getElementById(id);
-      inp.type = inp.type === "password" ? "text" : "password";
+    window.showForgotView = () => {
+      document.getElementById("view-login").style.display    = "none";
+      document.getElementById("view-register").style.display = "none";
+      document.getElementById("view-forgot").style.display    = "block";
     };
 
-    document.addEventListener("keydown", e => {
-      if (e.key !== "Enter") return;
-      const loginVisible = document.getElementById("login-form")?.style.display !== "none";
-      if (loginVisible) handleLogin(); else handleRegister();
-    });
-
-    window.showForgotModal = () => {
-      document.getElementById("forgot-modal").style.display = "flex";
-      setTimeout(() => document.getElementById("forgot-modal").classList.add("show"), 10);
+    window.backToLoginView = () => {
+      document.getElementById("view-forgot").style.display = "none";
+      switchTab("login");
     };
-    window.closeForgotModal = () => {
-      const m = document.getElementById("forgot-modal");
-      m.classList.remove("show");
-      setTimeout(() => m.style.display = "none", 300);
+
+    window.togglePasswordVisibility = (inputId, iconEl) => {
+      const input = document.getElementById(inputId);
+      const isPw = input.type === "password";
+      input.type = isPw ? "text" : "password";
+      iconEl.className = isPw ? "fas fa-eye-slash" : "fas fa-eye";
+    };
+
+    // ─── PASSWORD STRENGTH ──────────────────────────────────────
+    function evaluatePassword(pwd) {
+      const checks = {
+        length:  pwd.length >= 8,
+        upper:   /[A-Z]/.test(pwd),
+        lower:   /[a-z]/.test(pwd),
+        number:  /[0-9]/.test(pwd),
+        special: /[^A-Za-z0-9]/.test(pwd),
+      };
+      const score = Object.values(checks).filter(Boolean).length;
+      let label = "", color = "", pct = 0;
+      if (pwd.length > 0) {
+        if (score <= 2)      { label = "Zəif";   color = "#e5484d"; pct = 25;  }
+        else if (score === 3){ label = "Orta";   color = "#f59e0b"; pct = 50;  }
+        else if (score === 4){ label = "Yaxşı";  color = "#3b82f6"; pct = 75;  }
+        else                 { label = "Güclü";  color = "#22c55e"; pct = 100; }
+      }
+      return { checks, score, label, color, pct, valid: pwd.length >= 8 && score >= 3 };
+    }
+
+    function renderPasswordStrength(pwd) {
+      const { color, pct, label } = evaluatePassword(pwd);
+      const bar  = document.getElementById("pw-strength-bar");
+      const text = document.getElementById("pw-strength-label");
+      bar.style.width = pct + "%";
+      bar.style.background = color || "transparent";
+      text.textContent = label;
+      text.style.color = color || "var(--muted-2)";
+    }
+
+    window.onRegisterPasswordInput = (val) => {
+      renderPasswordStrength(val);
+      checkPasswordsMatch();
+    };
+
+    function checkPasswordsMatch() {
+      const pwd     = document.getElementById("reg-password").value;
+      const confirm = document.getElementById("reg-confirm").value;
+      const msg = document.getElementById("confirm-msg");
+      if (!confirm) { msg.textContent = ""; return true; }
+      if (pwd === confirm) {
+        msg.textContent = "Şifrələr uyğundur ✓";
+        msg.style.color = "#22c55e";
+        return true;
+      } else {
+        msg.textContent = "Şifrələr üst-üstə düşmür";
+        msg.style.color = "var(--red)";
+        return false;
+      }
+    }
+    window.onRegisterConfirmInput = checkPasswordsMatch;
+
+    // ─── CLOUDFLARE TURNSTILE ───────────────────────────────────
+    // Client-side widget only proves a token was generated. Anyone can be
+    // spoofed here — the token MUST be re-checked on your server with your
+    // Turnstile *secret* key before you trust it. Never put the secret key
+    // in this file. Implement a small backend endpoint (e.g. a Firebase
+    // Cloud Function) that does:
+    //
+    //   POST https://challenges.cloudflare.com/turnstile/v0/siteverify
+    //   body: { secret: <YOUR_SECRET_KEY>, response: <token> }
+    //
+    // and returns { success: true/false } to the client. Point the fetch
+    // below at that endpoint once it exists.
+    window.onTurnstileSuccess = (token) => { window.__turnstileToken = token; };
+    window.onTurnstileExpired = () => { window.__turnstileToken = null; };
+    window.onTurnstileError   = () => { window.__turnstileToken = null; };
+
+    async function verifyTurnstileServerSide(token) {
+      try {
+        const res = await fetch("/api/verify-turnstile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.success === true;
+      } catch (e) {
+        // Endpoint not implemented yet, or network error.
+        console.warn("[Turnstile] Server verification endpoint unreachable — " +
+          "implement /api/verify-turnstile on your backend. Blocking registration until then.");
+        return false;
+      }
+    }
+
+    // ─── EMAIL/PASSWORD LOGIN ────────────────────────────────────
+     window.handleLoginSubmit = async (ev) => {
+  ev.preventDefault();
+  const email = document.getElementById("login-email").value.trim();
+  const pwd   = document.getElementById("login-password").value;
+  
+  // Добавляем проверку токена
+  const token = window.__turnstileToken;
+  if (!token) {
+    showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
+    return;
+  }
+
+  if (!email || !pwd) {
+    showToast("Bütün sahələri doldurun", "error");
+    return;
+  }
+
+  const btn = document.getElementById("login-submit-btn");
+  btn.classList.add("is-loading");
+  
+  try {
+    // Выполняем проверку капчи на сервере (через вашу функцию)
+    const captchaOk = await verifyTurnstileServerSide(token);
+    if (!captchaOk) {
+      showToast("Captcha doğrulaması alınmadı.", "error");
+      return;
+    }
+    
+    await signInWithEmailAndPassword(auth, email, pwd);
+    showToast("Giriş uğurlu!", "success");
+  } catch (e) {
+    showToast(parseFirebaseError(e.code), "error");
+  } finally {
+    btn.classList.remove("is-loading");
+    // Сбрасываем капчу после попытки
+    if (typeof turnstile !== "undefined") turnstile.reset();
+    window.__turnstileToken = null;
+  }
+};
+    // ─── EMAIL/PASSWORD REGISTRATION ─────────────────────────────
+    window.handleRegisterSubmit = async (ev) => {
+      ev.preventDefault();
+      const ad      = document.getElementById("reg-firstname").value.trim();
+      const soyad   = document.getElementById("reg-lastname").value.trim();
+      const email   = document.getElementById("reg-email").value.trim();
+      const pwd     = document.getElementById("reg-password").value;
+      const confirm = document.getElementById("reg-confirm").value;
+
+      if (!ad || !soyad || !email || !pwd || !confirm) {
+        showToast("Bütün sahələri doldurun", "error");
+        return;
+      }
+      const strength = evaluatePassword(pwd);
+      if (!strength.valid) {
+        showToast("Şifrə ən azı 8 simvol olmalı və hərflər+rəqəm/simvol qarışığından ibarət olmalıdır", "error");
+        return;
+      }
+      if (pwd !== confirm) {
+        showToast("Şifrələr üst-üstə düşmür", "error");
+        return;
+      }
+      const token = window.__turnstileToken;
+      if (!token) {
+        showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
+        return;
+      }
+
+      const btn = document.getElementById("register-submit-btn");
+      btn.classList.add("is-loading");
+      try {
+        const captchaOk = await verifyTurnstileServerSide(token);
+        if (!captchaOk) {
+          showToast("Captcha doğrulaması alınmadı. Bir az sonra yenidən cəhd edin.", "error");
+          return;
+        }
+        const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+        await updateProfile(cred.user, { displayName: `${ad} ${soyad}` });
+        showToast("Qeydiyyat uğurludur, xoş gəldiniz!", "success");
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      } finally {
+        btn.classList.remove("is-loading");
+        if (typeof turnstile !== "undefined") turnstile.reset();
+        window.__turnstileToken = null;
+      }
+    };
+
+    // ─── FORGOT PASSWORD ─────────────────────────────────────────
+    window.handleForgotSubmit = async (ev) => {
+      ev.preventDefault();
+      const email = document.getElementById("forgot-email").value.trim();
+      if (!email) {
+        showToast("E-poçt ünvanı daxil edin", "error");
+        return;
+      }
+      const btn = document.getElementById("forgot-submit-btn");
+      btn.classList.add("is-loading");
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Sıfırlama linki e-poçtunuza göndərildi", "success");
+        backToLoginView();
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      } finally {
+        btn.classList.remove("is-loading");
+      }
     };
 
     document.addEventListener("DOMContentLoaded", initRecentProvider);
@@ -337,31 +410,31 @@ if (!tos) {
     *{box-sizing:border-box;margin:0;padding:0;}
     html,body{height:100%;}
 
-body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  /* Увеличенный градиент для эффекта "пятна" */
-  background: linear-gradient(125deg, #ff0080, #7928ca, #0070f3, #00dfd8);
-  background-size: 400% 400%;
-  animation: rainbow-gradient 15s ease infinite;
-  
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Inter', sans-serif;
-  color: var(--text);
-  overflow: hidden;
-  position: relative;
-}
+    body {
+      /* min-height + auto overflow (not height:100vh + overflow:hidden)
+         so tall content — like the full register form — can scroll on
+         small screens instead of being trapped off-screen. */
+      min-height: 100vh;
+      background: linear-gradient(125deg, #ff0080, #7928ca, #0070f3, #00dfd8);
+      background-size: 400% 400%;
+      animation: rainbow-gradient 15s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      padding: 24px 14px;
+    }
 
-@keyframes rainbow-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+    @keyframes rainbow-gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-    /* ── Toast ── */
     #toast-container{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
     .toast{background:#f3f7fc;box-shadow:0 10px 30px rgba(30,60,110,.14);border-radius:12px;padding:13px 20px;display:flex;align-items:center;gap:10px;font-size:13px;border-left:3px solid var(--blue);transform:translateX(120%);transition:transform .45s cubic-bezier(.68,-.55,.265,1.55);min-width:260px;color:var(--text);}
     .toast.show{transform:translateX(0);}
@@ -369,28 +442,15 @@ body {
     .toast-error{border-color:var(--red);} .toast-error i{color:var(--red);}
     .toast-info i{color:var(--blue);}
 
-    /* ── Card ── */
-    .stage{position:relative;z-index:1;width:100%;max-width:432px;}
-    .ring-wrap{position:relative;border-radius:24px;}
-    .card{position:relative;z-index:1;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:38px 32px 30px;box-shadow:0 20px 50px rgba(30,60,110,.09);}
+    .stage{position:relative;z-index:1;width:100%;max-width:400px;margin:auto;}
+    .card{position:relative;z-index:1;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:34px 28px 26px;box-shadow:0 20px 50px rgba(30,60,110,.09);}
 
-    /* ── Logo ── */
     .logo{text-align:center;margin-bottom:22px;}
     .logo-icon{width:46px;height:46px;margin:0 auto 10px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;
       background:linear-gradient(135deg,var(--blue),var(--blue-2));box-shadow:0 8px 20px rgba(59,130,246,.25);}
     .logo h1{font-family:'Sora',sans-serif;font-size:21px;font-weight:800;letter-spacing:.5px;color:var(--text);}
     .logo p{font-size:11.5px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
 
-    /* ── Tabs ── */
-    .tabs{display:flex;background:var(--inp);border-radius:12px;padding:4px;gap:4px;margin-bottom:20px;border:1px solid var(--border);}
-    .tab-btn{flex:1;padding:9px;border:none;background:none;color:var(--muted);font-size:12.5px;font-weight:700;letter-spacing:.2px;border-radius:9px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center;gap:6px;}
-    .tab-btn.active{background:linear-gradient(90deg,var(--blue),var(--blue-2));color:#ffffff;}
-    .tab-btn:not(.active):hover{color:var(--text);}
-
-    /* ── Social provider grid ── */
-    .social-label{font-size:10.5px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted-2);margin-bottom:9px;text-align:center;}
-
-    /* ── Recently-used quick chip ── */
     .recent-chip{display:flex;align-items:center;gap:10px;background:var(--blue-soft);border:1px solid #cfe0fb;border-radius:14px;padding:9px 12px;margin-bottom:14px;cursor:pointer;transition:background .3s ease,transform .3s cubic-bezier(.34,1.56,.64,1);}
     .recent-chip:hover{background:#e0ebfd;transform:translateY(-1px);}
     .recent-chip:active{transform:translateY(0) scale(.98);}
@@ -400,382 +460,264 @@ body {
     .recent-chip-name{font-size:13px;font-weight:700;color:var(--text);}
     .recent-chip-arrow{color:var(--blue);font-size:12px;}
 
-    /* ── Popular providers: small round icon buttons ── */
-    .social-popular{display:flex;justify-content:center;gap:26px;margin-bottom:16px;}
-    .popular-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
-    .popular-item span{font-size:10.5px;color:var(--muted);font-weight:600;}
-    .social-circle{width:50px;height:50px;border-radius:50%;background:#eef3fb;border:1px solid var(--border);color:var(--text);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;
-      box-shadow:0 4px 12px rgba(30,60,110,.1);transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,border-color .3s ease;}
-    .social-circle:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(30,60,110,.16);border-color:var(--blue-2);}
-    .social-circle:active{transform:translateY(-1px) scale(.95);}
-    .social-circle .fa-google{color:#ea4335;}
-    .social-circle .fa-facebook-f{color:#1877f2;}
-    .social-circle .fa-github{color:#111;}
-    .social-circle.is-loading{opacity:.5;pointer-events:none;}
-    .social-circle.is-loading::after{
-      content:'';position:absolute;width:16px;height:16px;border-radius:50%;
-      border:2px solid rgba(59,130,246,.25);border-top-color:var(--blue);animation:spin2 .7s linear infinite;
+    .social-label{font-size:10.5px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted-2);margin-bottom:14px;text-align:center;}
+    .social-row{display:flex;justify-content:center;gap:20px;margin-bottom:18px;}
+    .social-circle{
+      position:relative;background:transparent;border:none;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:7px;
     }
-    .social-circle.is-recent{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15),0 4px 12px rgba(30,60,110,.1);}
+    .circle-icon{
+      width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-size:22px;color:#fff;box-shadow:0 6px 16px rgba(30,60,110,.15);
+      transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease;
+    }
+    .social-circle:hover .circle-icon{transform:translateY(-3px) scale(1.05);box-shadow:0 10px 24px rgba(30,60,110,.22);}
+    .social-circle:active .circle-icon{transform:translateY(0) scale(.96);}
+    .circle-label{font-size:11px;font-weight:600;color:var(--muted);}
+    .icon-google{background:linear-gradient(135deg,#ea4335,#fbbc05);}
+    .icon-github{background:linear-gradient(135deg,#333,#000);}
+    .icon-discord{background:linear-gradient(135deg,#7289da,#5865f2);}
+    .social-circle.is-loading{pointer-events:none;}
+    .social-circle.is-loading .circle-icon{opacity:.35;}
+    .social-circle.is-loading::after{
+      content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;
+      border:3px solid rgba(59,130,246,.25);border-top-color:var(--blue);animation:spin2 .7s linear infinite;
+    }
+    .social-circle.is-recent .circle-icon{box-shadow:0 0 0 3px rgba(59,130,246,.45),0 6px 16px rgba(30,60,110,.15);}
+    .social-circle.is-recent .circle-label::after{content:' • son';color:var(--blue);}
     @keyframes spin2{to{transform:rotate(360deg);}}
 
-    /* ── Other providers: elegant row below the email form ── */
-    .other-methods{margin-top:22px;}
-    .other-methods-divider{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-    .other-methods-divider span{font-size:10.5px;color:var(--muted-2);white-space:nowrap;text-transform:uppercase;letter-spacing:.9px;font-weight:700;}
-    .other-methods-divider::before,.other-methods-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border) 20%,var(--border) 80%,transparent);}
-
-    .other-methods-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
-    .other-btn{
-      position:relative;flex:1 1 0;min-width:56px;max-width:76px;
-      padding:12px 4px 10px;border-radius:16px;cursor:pointer;
-      background:#eef3fb;border:1px solid var(--border);
-      display:flex;flex-direction:column;align-items:center;gap:7px;
-      box-shadow:0 2px 8px rgba(30,60,110,.06);
-      transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,border-color .3s ease;
-    }
-    .other-btn:hover{transform:translateY(-4px);border-color:var(--blue-2);box-shadow:0 12px 20px rgba(30,60,110,.14);}
-    .other-btn:active{transform:translateY(-1px) scale(.96);}
-    .other-name{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.15px;white-space:nowrap;}
-
-    .other-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;
-      box-shadow:0 3px 8px rgba(30,60,110,.18);transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
-    .other-btn:hover .other-icon{transform:scale(1.08) rotate(-4deg);}
-    .oi-x{background:linear-gradient(135deg,#2b2b2b,#000);}
-    .oi-ms{background:linear-gradient(135deg,#3bc7f4,#0078d4);}
-    .oi-yahoo{background:linear-gradient(135deg,#a24fe8,#6001d2);}
-
-    .other-btn.is-loading{opacity:.5;pointer-events:none;}
-    .other-btn.is-loading::after{
-      content:'';position:absolute;top:6px;right:6px;width:12px;height:12px;border-radius:50%;
-      border:2px solid rgba(59,130,246,.25);border-top-color:var(--blue);animation:spin2 .7s linear infinite;
-    }
-    .other-btn.is-recent .other-icon{box-shadow:0 0 0 3px rgba(59,130,246,.22),0 3px 8px rgba(30,60,110,.18);}
-    .other-btn.is-recent::before{
-      content:'★';position:absolute;top:-5px;right:6px;width:16px;height:16px;border-radius:50%;
-      background:var(--blue);color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 4px rgba(30,60,110,.3);
-    }
-
-
-    .btn-guest{width:100%;padding:11px;background:var(--blue-soft);border:1px solid #cfe0fb;border-radius:12px;color:#2563eb;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .3s ease,border-color .3s ease;margin-bottom:6px;}
-    .btn-guest:hover{background:#e0ebfd;border-color:var(--blue-2);}
-
-    .divider{display:flex;align-items:center;gap:10px;margin:16px 0 14px;}
+    .divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
     .divider span{font-size:10.5px;color:var(--muted-2);white-space:nowrap;text-transform:uppercase;letter-spacing:.8px;}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 
-    /* ── Fields ── */
-    .field{margin-bottom:14px;}
-    .field label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+    .btn-guest{width:100%;padding:11px;background:var(--blue-soft);border:1px solid #cfe0fb;border-radius:12px;color:#2563eb;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .3s ease,border-color .3s ease;}
+    .btn-guest:hover{background:#e0ebfd;border-color:var(--blue-2);}
+
+    /* ── Login/Register tab switch ── */
+    .tab-switch{display:flex;background:var(--inp);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px;}
+    .tab-btn{flex:1;padding:9px 0;border-radius:9px;text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;transition:background .25s ease,color .25s ease;}
+    .tab-btn.active{background:#fff;color:var(--blue);box-shadow:0 2px 6px rgba(30,60,110,.1);}
+
+    /* ── Form fields ── */
+    .form-group{margin-bottom:12px;}
+    .form-row{display:flex;gap:10px;}
+    .form-row .form-group{flex:1;}
+    label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;letter-spacing:.2px;}
     .input-wrap{position:relative;}
-    .input-wrap i.prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted-2);font-size:13px;pointer-events:none;}
-    .eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:13px;padding:2px 4px;transition:color .25s ease;}
-    .eye-btn:hover{color:var(--blue);}
-    input[type="text"],input[type="email"],input[type="password"]{width:100%;background:var(--inp);border:1px solid var(--border);border-radius:12px;padding:11px 14px 11px 40px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .3s ease,box-shadow .3s ease;}
-    input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.12);background:#eef3fb;}
-    input::placeholder{color:#a9b4c4;}
-    .field-error{display:none;font-size:11px;color:var(--red);margin-top:5px;padding-left:4px;}
+    input[type="text"],input[type="email"],input[type="password"]{
+      width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--border);
+      background:var(--inp);font-size:13.5px;color:var(--text);font-family:'Inter',sans-serif;
+      transition:border-color .25s ease,box-shadow .25s ease;
+    }
+    input:focus{outline:none;border-color:var(--blue-2);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+    .pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted-2);font-size:13px;}
 
-    .btn-primary{width:100%;padding:13px;background:linear-gradient(90deg,var(--blue),var(--blue-2));border:none;border-radius:12px;color:#ffffff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;transition:opacity .3s ease,transform .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px;box-shadow:0 8px 20px rgba(59,130,246,.22);}
-    .btn-primary:hover:not(:disabled){opacity:.92;}
-    .btn-primary:active:not(:disabled){transform:scale(.98);}
-    .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-    .btn-spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin2 .7s linear infinite;}
+    .pw-strength{margin-top:7px;}
+    .pw-strength-track{height:5px;border-radius:3px;background:var(--border);overflow:hidden;}
+    .pw-strength-fill{height:100%;width:0;border-radius:3px;transition:width .3s ease,background .3s ease;}
+    .pw-strength-row{display:flex;justify-content:space-between;margin-top:4px;}
+    .pw-strength-row span{font-size:10.5px;color:var(--muted-2);}
+    #pw-strength-label{font-weight:700;}
 
-    .forgot-link{text-align:right;margin-top:-6px;margin-bottom:12px;}
-    .forgot-link a{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:none;opacity:.9;transition:opacity .3s ease;}
-    .forgot-link a:hover{opacity:1;text-decoration:underline;}
+    .field-msg{font-size:10.5px;margin-top:4px;min-height:13px;display:block;}
 
-    /* ── Registration success screen ── */
-    #reg-success{display:none;text-align:center;padding:10px 0;}
-    .success-icon{font-size:50px;margin-bottom:12px;animation:popIn .5s cubic-bezier(.68,-.55,.265,1.55) forwards;}
-    @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
-    .success-title{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;margin-bottom:6px;color:#16a34a;}
-    .success-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
-    .success-sub b{color:var(--text);}
-    .btn-go-login{width:100%;padding:12px;background:linear-gradient(90deg,var(--blue),var(--blue-2));border:none;border-radius:12px;color:#ffffff;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .3s ease;box-shadow:0 8px 20px rgba(59,130,246,.22);}
-    .btn-go-login:hover{opacity:.92;}
+    .forgot-link{display:block;text-align:right;font-size:11.5px;color:var(--blue);cursor:pointer;margin:-2px 0 14px;font-weight:600;}
+    .forgot-link:hover{text-decoration:underline;}
 
-    /* ── Forgot Password Modal ── */
-    #forgot-modal{display:none;position:fixed;inset:0;background:rgba(20,35,60,.35);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s;}
-    #forgot-modal.show{opacity:1;}
-    .modal-card{background:#f3f7fc;border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(30,60,110,.2);}
-    .modal-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;color:var(--text);}
-    .modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
-    .modal-input{width:100%;background:var(--inp);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .3s ease;margin-bottom:12px;}
-    .modal-input:focus{border-color:var(--blue);background:#eef3fb;}
-    .modal-btns{display:flex;gap:8px;}
-    .modal-send{flex:1;padding:10px;background:linear-gradient(90deg,var(--blue),var(--blue-2));border:none;border-radius:10px;color:#ffffff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .3s ease;}
-    .modal-send:hover{opacity:.92;}
-    .modal-cancel{padding:10px 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;transition:border-color .3s ease,color .3s ease;}
-    .modal-cancel:hover{border-color:var(--blue-2);color:var(--text);}
+    .btn-primary{
+      width:100%;padding:12px;border-radius:12px;border:none;cursor:pointer;
+      background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;
+      font-size:13.5px;font-weight:700;position:relative;
+      box-shadow:0 10px 20px rgba(59,130,246,.25);transition:transform .2s ease;
+    }
+    .btn-primary:hover{transform:translateY(-1px);}
+    .btn-primary:active{transform:translateY(0);}
+    .btn-primary.is-loading{opacity:.6;pointer-events:none;}
+    .btn-primary.is-loading::after{
+      content:'';position:absolute;right:16px;top:50%;margin-top:-8px;width:16px;height:16px;border-radius:50%;
+      border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin2 .7s linear infinite;
+    }
 
-    /* ── Smooth entrance animations ── */
+    .cf-turnstile-wrap{display:flex;justify-content:center;margin:14px 0;}
+
+    .back-link{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-bottom:14px;font-weight:600;}
+    .back-link:hover{color:var(--blue);}
+    .forgot-hint{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+
     .card{animation:cardIn .55s cubic-bezier(.16,1,.3,1) both;}
     @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
-    .form-fade-in{animation:formFade .4s cubic-bezier(.16,1,.3,1) both;}
-    @keyframes formFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-    #login-form,#register-form{transition:opacity .3s ease;}
 
-    /* ── Mobile adaptation ── */
     @media (max-width:480px){
-      body{padding:14px;align-items:flex-start;}
-      .stage{max-width:100%;padding-top:18px;}
       .card{padding:26px 18px 22px;border-radius:20px;}
       .logo-icon{width:40px;height:40px;font-size:19px;}
       .logo h1{font-size:19px;}
-      .tabs{margin-bottom:16px;}
-      .tab-btn{padding:10px 6px;font-size:12px;}
-      .social-popular{gap:14px;margin-bottom:14px;}
-      .social-circle{width:46px;height:46px;font-size:17px;}
-      .popular-item span{font-size:9.5px;}
-      .other-methods-row{gap:8px;}
-      .other-btn{min-width:0;flex:1 1 0;max-width:none;padding:11px 4px 9px;}
-      .other-icon{width:30px;height:30px;font-size:13px;}
-      .other-name{font-size:8.5px;}
-      .field{margin-bottom:12px;}
-      input[type="text"],input[type="email"],input[type="password"]{padding:12px 14px 12px 38px;font-size:15px;}
-      .btn-primary,.btn-guest,.btn-go-login{padding:13px;font-size:14px;}
-      .modal-card{padding:22px 18px;}
-      .bg-3d .orb-1{width:150px;height:150px;}
-      .bg-3d .orb-2{width:90px;height:90px;}
-      .bg-3d .orb-3{width:60px;height:60px;}
-    }
-    @media (max-width:340px){
-      .other-methods-row{gap:6px;}
-      .other-btn{padding:9px 2px 7px;}
-      .other-name{display:none;}
+      .social-row{gap:14px;}
+      .circle-icon{width:50px;height:50px;font-size:20px;}
+      .form-row{flex-direction:column;gap:0;}
     }
 
-    
-.flying-text-container {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.f-text {
-  position: absolute;
-  font-family: 'Sora', sans-serif;
-  font-size: 10vw;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.04);
-  white-space: nowrap;
-}
-
-/* Каждой надписи — свой "характер" */
-.f-text:nth-child(1) { top: 10%; left: -20%; animation: float1 25s linear infinite; }
-.f-text:nth-child(2) { top: 40%; left: 60%; animation: float2 30s linear infinite; }
-.f-text:nth-child(3) { top: 70%; left: 10%; animation: float3 20s linear infinite; }
-.f-text:nth-child(4) { top: 20%; left: 30%; animation: float4 35s linear infinite; }
-
-@keyframes float1 { 0% { transform: rotate(15deg) translate(0, 0); } 100% { transform: rotate(15deg) translate(100vw, 50vh); } }
-@keyframes float2 { 0% { transform: rotate(-20deg) translate(0, 0); } 100% { transform: rotate(-20deg) translate(-50vw, -30vh); } }
-@keyframes float3 { 0% { transform: rotate(5deg) translate(0, 0); } 100% { transform: rotate(5deg) translate(80vw, -40vh); } }
-@keyframes float4 { 0% { transform: rotate(-10deg) translate(0, 0); } 100% { transform: rotate(-10deg) translate(20vw, 80vh); } }
+    .flying-text-container{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    .f-text{position:absolute;font-family:'Sora',sans-serif;font-size:10vw;font-weight:900;color:rgba(255,255,255,.04);white-space:nowrap;}
+    .f-text:nth-child(1){top:10%;left:-20%;animation:float1 25s linear infinite;}
+    .f-text:nth-child(2){top:40%;left:60%;animation:float2 30s linear infinite;}
+    .f-text:nth-child(3){top:70%;left:10%;animation:float3 20s linear infinite;}
+    .f-text:nth-child(4){top:20%;left:30%;animation:float4 35s linear infinite;}
+    @keyframes float1{0%{transform:rotate(15deg) translate(0,0);}100%{transform:rotate(15deg) translate(100vw,50vh);}}
+    @keyframes float2{0%{transform:rotate(-20deg) translate(0,0);}100%{transform:rotate(-20deg) translate(-50vw,-30vh);}}
+    @keyframes float3{0%{transform:rotate(5deg) translate(0,0);}100%{transform:rotate(5deg) translate(80vw,-40vh);}}
+    @keyframes float4{0%{transform:rotate(-10deg) translate(0,0);}100%{transform:rotate(-10deg) translate(20vw,80vh);}}
   </style>
 </head>
 <body>
 
- <div class="flying-text-container">
-  <div class="f-text">DeLoY</div>
-  <div class="f-text">DeLoY</div>
-  <div class="f-text">DeLoY</div>
-  <div class="f-text">DeLoY</div>
-</div>
-
-  <!-- ── Forgot Password Modal ── -->
-  <div id="forgot-modal" onclick="if(event.target===this)closeForgotModal()">
-    <div class="modal-card">
-      <div class="modal-title"> Şifrəni bərpa et</div>
-      <div class="modal-sub">E-mail ünvanını daxil et — sıfırlama linki göndərəcəyik.</div>
-      <input id="modal-email" class="modal-input" type="email" placeholder="name@example.com">
-      <div class="modal-btns">
-        <button class="modal-cancel" onclick="closeForgotModal()">Ləğv et</button>
-        <button class="modal-send" onclick="sendResetFromModal()">
-          <i class="fas fa-paper-plane"></i> Göndər
-        </button>
-      </div>
-    </div>
+  <div class="flying-text-container">
+    <div class="f-text">DeLoY</div>
+    <div class="f-text">DeLoY</div>
+    <div class="f-text">DeLoY</div>
+    <div class="f-text">DeLoY</div>
   </div>
 
   <div class="stage">
-    <div class="ring-wrap">
-      <div class="card">
-        <div class="logo">
-          <div class="logo-icon"></div>
-          <h1>DeLoYGame</h1>
-      <p>www.deloygame.xyz  </p>
-        </div>
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon"><i class="fas fa-gamepad"></i></div>
+        <h1>DeLoYGame</h1>
+        <p>www.deloygame.xyz</p>
+      </div>
 
-        <div class="tabs">
-          <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">
-            <i class="fas fa-arrow-right-to-bracket"></i> Giriş
-          </button>
-          <button class="tab-btn" id="tab-register" onclick="switchTab('register')">
-            <i class="fas fa-user-plus"></i> Qeydiyyat
-          </button>
+      <!-- Recently used quick-continue chip -->
+      <div id="recent-chip" class="recent-chip" style="display:none;" onclick="handleSocial(window.__recentKey)">
+        <div class="recent-chip-icon" id="recent-chip-icon"><i class="fab fa-google"></i></div>
+        <div class="recent-chip-text">
+          <span class="recent-chip-label">Son istifadə</span>
+          <span class="recent-chip-name" id="recent-chip-name">Google</span>
         </div>
+        <i class="fas fa-arrow-right recent-chip-arrow"></i>
+      </div>
 
-        <!-- ── Recently used quick-continue chip ── -->
-        <div id="recent-chip" class="recent-chip" style="display:none;" onclick="handleSocial(window.__recentKey)">
-          <div class="recent-chip-icon" id="recent-chip-icon"><i class="fab fa-google"></i></div>
-          <div class="recent-chip-text">
-            <span class="recent-chip-label">Son istifadə</span>
-            <span class="recent-chip-name" id="recent-chip-name">Google</span>
-          </div>
-          <i class="fas fa-arrow-right recent-chip-arrow"></i>
-        </div>
-
-        <!-- ── Popular providers (small round) ── -->
-        <div class="social-label">Populyar üsullar</div>
-        <div class="social-popular">
-          <div class="popular-item">
-            <button class="social-circle" id="social-google" title="Google" onclick="handleSocial('google')"><i class="fab fa-google"></i></button>
-            <span>Google</span>
-          </div>
-          <div class="popular-item">
-            <button class="social-circle" id="social-facebook" title="Facebook" onclick="handleSocial('facebook')"><i class="fab fa-facebook-f"></i></button>
-            <span>Facebook</span>
-          </div>
-          <div class="popular-item">
-            <button class="social-circle" id="social-github" title="GitHub" onclick="handleSocial('github')"><i class="fab fa-github"></i></button>
-            <span>GitHub</span>
-          </div>
-        </div>
-
-        <button class="btn-guest" onclick="handleGuest()">
-          <i class="fas fa-user-secret"></i> Qonaq kimi daxil ol
+      <div class="social-label">Giriş üsulu seç</div>
+      <div class="social-row">
+        <button class="social-circle" id="social-google" onclick="handleSocial('google')" title="Google">
+          <span class="circle-icon icon-google"><i class="fab fa-google"></i></span>
+          <span class="circle-label">Google</span>
         </button>
+        <button class="social-circle" id="social-github" onclick="handleSocial('github')" title="GitHub">
+          <span class="circle-icon icon-github"><i class="fab fa-github"></i></span>
+          <span class="circle-label">GitHub</span>
+        </button>
+        <button class="social-circle" id="social-discord" onclick="handleSocial('discord')" title="Discord">
+          <span class="circle-icon icon-discord"><i class="fab fa-discord"></i></span>
+          <span class="circle-label">Discord</span>
+        </button>
+      </div>
 
-        <div class="divider"><span>e-mail ilə</span></div>
+      <div class="divider"><span>və ya</span></div>
 
-        <!-- ── LOGIN FORM ── -->
-        <div id="login-form">
-          <div class="field">
-            <label>E-mail</label>
-            <div class="input-wrap">
-              <i class="fas fa-envelope prefix"></i>
-              <input type="email" id="login-email" placeholder="name@example.com">
-            </div>
-            <span class="field-error" id="login-email-err"></span>
-          </div>
-          <div class="field">
-            <label>Şifrə</label>
-            <div class="input-wrap">
-              <i class="fas fa-lock prefix"></i>
-              <input type="password" id="login-pass" placeholder="••••••••">
-              <button class="eye-btn" onclick="togglePass('login-pass')" type="button">
-                <i class="fas fa-eye"></i>
-              </button>
-            </div>
-            <span class="field-error" id="login-pass-err"></span>
-          </div>
+      <button class="btn-guest" onclick="handleGuest()">
+        <i class="fas fa-user-secret"></i> Qonaq kimi daxil ol
+      </button>
 
-          <div class="forgot-link">
-            <a onclick="handleForgotPassword()">Şifrəni unutdum?</a>
-          </div>
+      <div class="divider"><span>e-poçt ilə</span></div>
 
-          <button class="btn-primary" id="login-btn" onclick="handleLogin()">
-            <span class="btn-text"><i class="fas fa-gamepad"></i> Daxil ol</span>
-            <span class="btn-spinner"></span>
-          </button>
-        </div>
+      <div class="tab-switch">
+        <div class="tab-btn active" id="tab-login" onclick="switchTab('login')">Giriş</div>
+        <div class="tab-btn" id="tab-register" onclick="switchTab('register')">Qeydiyyat</div>
+      </div>
 
-        <!-- ── REGISTER FORM ── -->
-        <div id="register-form" style="display:none">
-          <div class="field">
-            <label>Ad</label>
-            <div class="input-wrap">
-              <i class="fas fa-user prefix"></i>
-              <input type="text" id="reg-name" placeholder="Name">
-            </div>
-            <span class="field-error" id="reg-name-err"></span>
-          </div>
-          <div class="field">
-            <label>E-mail</label>
-            <div class="input-wrap">
-              <i class="fas fa-envelope prefix"></i>
-              <input type="email" id="reg-email" placeholder="name@example.com">
-            </div>
-            <span class="field-error" id="reg-email-err"></span>
-          </div>
-          <div class="field">
-            <label>Şifrə</label>
-            <div class="input-wrap">
-              <i class="fas fa-lock prefix"></i>
-              <input type="password" id="reg-pass" placeholder="Ən az 6 simvol">
-              <button class="eye-btn" onclick="togglePass('reg-pass')" type="button">
-                <i class="fas fa-eye"></i>
-              </button>
-            </div>
-            <span class="field-error" id="reg-pass-err"></span>
-          </div>
-          <div class="field">
-            <label>Şifrəni təkrarla</label>
-            <div class="input-wrap">
-              <i class="fas fa-lock prefix"></i>
-              <input type="password" id="reg-pass2" placeholder="••••••••">
-              <button class="eye-btn" onclick="togglePass('reg-pass2')" type="button">
-                <i class="fas fa-eye"></i>
-              </button>
-            </div>
-            <span class="field-error" id="reg-pass2-err"></span>
-          </div>
-          <button class="btn-primary" id="reg-btn" onclick="handleRegister()">
-            <span class="btn-text"><i class="fas fa-user-plus"></i> Hesab yarat</span>
-            <span class="btn-spinner"></span>
-          </button>
+      <!-- ── LOGIN ── -->
+      <form id="view-login" onsubmit="handleLoginSubmit(event)">
 
-<!-- Чекбокс для политики (ToS) -->
-<div class="field" style="margin-bottom: 15px;">
-  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--muted); font-size: 11px;">
-    <input type="checkbox" id="reg-tos" style="width: 16px; height: 16px;">
-    <span><a href="tos.html" style="color: var(--blue);">İstifadəçi şərtləri</a> ilə razıyam</span>
-  </label>
+<div class="cf-turnstile" 
+     data-sitekey="0x4AAAAAAD4HDY_rzDWl7f-d"
+     data-callback="onTurnstileSuccess"
+     data-expired-callback="onTurnstileExpired"
+     data-error-callback="onTurnstileError">
 </div>
+        <div class="form-group">
+          <label for="login-email">E-poçt</label>
+          <input type="email" id="login-email" placeholder="ad@nümunə.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Şifrə</label>
+          <div class="input-wrap">
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+            <i class="fas fa-eye pw-toggle" onclick="togglePasswordVisibility('login-password', this)"></i>
+          </div>
+        </div>
+        <span class="forgot-link" onclick="showForgotView()">Şifrəni unutmusan?</span>
+        <button type="submit" class="btn-primary" id="login-submit-btn">Daxil ol</button>
+      </form>
 
-<div class="g-recaptcha" data-sitekey="6LdS8kstAAAAACwlVkpczKm76SEPiBDyN5w6RGFm" style="margin-bottom: 20px;"></div>
-
+      <!-- ── REGISTER ── -->
+      <form id="view-register" style="display:none;" onsubmit="handleRegisterSubmit(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reg-firstname">Ad</label>
+            <input type="text" id="reg-firstname" placeholder="Ad" autocomplete="given-name" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-lastname">Soyad</label>
+            <input type="text" id="reg-lastname" placeholder="Soyad" autocomplete="family-name" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">E-poçt</label>
+          <input type="email" id="reg-email" placeholder="ad@nümunə.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Şifrə</label>
+          <div class="input-wrap">
+            <input type="password" id="reg-password" placeholder="ən azı 8 simvol" autocomplete="new-password" required
+              oninput="onRegisterPasswordInput(this.value)">
+            <i class="fas fa-eye pw-toggle" onclick="togglePasswordVisibility('reg-password', this)"></i>
+          </div>
+          <div class="pw-strength">
+            <div class="pw-strength-track"><div class="pw-strength-fill" id="pw-strength-bar"></div></div>
+            <div class="pw-strength-row">
+              <span>Böyük/kiçik hərf + rəqəm/simvol qarışığı istifadə edin</span>
+              <span id="pw-strength-label"></span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-confirm">Şifrəni təsdiqlə</label>
+          <div class="input-wrap">
+            <input type="password" id="reg-confirm" placeholder="şifrəni təkrar yaz" autocomplete="new-password" required
+              oninput="onRegisterConfirmInput()">
+            <i class="fas fa-eye pw-toggle" onclick="togglePasswordVisibility('reg-confirm', this)"></i>
+          </div>
+          <span class="field-msg" id="confirm-msg"></span>
         </div>
 
-        <!-- ── Other providers (elegant row, below email) ── -->
-        <div class="other-methods">
-          <div class="other-methods-divider"><span>Digər üsullar</span></div>
-          <div class="other-methods-row">
-            <button class="other-btn" id="social-twitter" title="Twitter / X" onclick="handleSocial('twitter')">
-              <span class="other-icon oi-x"><i class="fab fa-x-twitter"></i></span>
-              <span class="other-name">X</span>
-            </button>
-            <button class="other-btn" id="social-microsoft" title="Microsoft" onclick="handleSocial('microsoft')">
-              <span class="other-icon oi-ms"><i class="fab fa-microsoft"></i></span>
-              <span class="other-name">Microsoft</span>
-            </button>
-            <button class="other-btn" id="social-yahoo" title="Yahoo" onclick="handleSocial('yahoo')">
-              <span class="other-icon oi-yahoo"><i class="fab fa-yahoo"></i></span>
-              <span class="other-name">Yahoo</span>
-            </button>
+        <!-- Cloudflare Turnstile — real site key (public, safe to keep in client code) -->
+        <div class="cf-turnstile-wrap">
+          <div class="cf-turnstile"
+               data-sitekey="0x4AAAAAAD4HDY_rzDWl7f-d"
+               data-callback="onTurnstileSuccess"
+               data-expired-callback="onTurnstileExpired"
+               data-error-callback="onTurnstileError">
           </div>
         </div>
 
-        <!-- ── REGISTER SUCCESS ── -->
-        <div id="reg-success">
-          <div class="success-icon">👍</div>
-          <div class="success-title">Hesab uğurla yaradıldı!</div>
-          <div class="success-sub">
-            Xoş gəldiniz, <b id="reg-success-name"></b>!<br>
-            İndi e-mail və şifrənizlə daxil ola bilərsiniz.
+        <button type="submit" class="btn-primary" id="register-submit-btn">Qeydiyyatdan keç</button>
+      </form>
+
+      <!-- ── FORGOT PASSWORD ── -->
+      <div id="view-forgot" style="display:none;">
+        <div class="back-link" onclick="backToLoginView()"><i class="fas fa-arrow-left"></i> Girişə qayıt</div>
+        <p class="forgot-hint">E-poçt ünvanını daxil et, şifrəni sıfırlamaq üçün link göndərəcəyik.</p>
+        <form onsubmit="handleForgotSubmit(event)">
+          <div class="form-group">
+            <label for="forgot-email">E-poçt</label>
+            <input type="email" id="forgot-email" placeholder="ad@nümunə.com" autocomplete="email" required>
           </div>
-          <button class="btn-go-login" onclick="switchTab('login')">
-            <i class="fas fa-arrow-right-to-bracket"></i> Daxil ol
-          </button>
-        </div>
+          <button type="submit" class="btn-primary" id="forgot-submit-btn">Sıfırlama linki göndər</button>
+        </form>
       </div>
     </div>
   </div>
-</div>
+
+  <div id="toast-container"></div>
 </body>
 </html>
