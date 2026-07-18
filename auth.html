@@ -94,19 +94,11 @@
 
    onAuthStateChanged(auth, user => {
   if (user) {
-    // Проверяем, подтверждена ли почта
-    if (user.providerData[0].providerId === 'password' && !user.emailVerified) {
-        // Если это обычная почта (не соцсети) и она НЕ подтверждена
-        alert("Zəhmət olmasa, əvvəlcə e-poçtunuzu təsdiqləyin!");
-        auth.signOut(); // Выбрасываем
+    console.log("İstifadəçi daxil oldu:", user.email);
+  } else  {
+    if (!window.location.pathname.includes("auth.html")) {
         window.location.href = "auth.html";
-    } else {
-        // Пользователь подтвержден или зашел через соцсеть (Google/GitHub)
-        console.log("Xoş gəldiniz!");
     }
-  } else {
-    // Пользователь не авторизован
-    window.location.href = "auth.html";
   }
 });
 
