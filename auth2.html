@@ -280,58 +280,52 @@
     return true; 
 }
 
-    // ─── EMAIL/PASSWORD LOGIN ────────────────────────────────────
-     window.handleLoginSubmit = async (ev) => {
-  ev.preventDefault();
-  const email = document.getElementById("login-email").value.trim();
-  const pwd   = document.getElementById("login-password").value;
-  
-  // Добавляем проверку токена
-  const token = window.__turnstileToken;
-  if (!token) {
-    showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
-    return;
-  }
-
-  if (!email || !pwd) {
-    showToast("Bütün sahələri doldurun", "error");
-    return;
-  }
-
-  const btn = document.getElementById("login-submit-btn");
-  btn.classList.add("is-loading");
-  
-  try {
-    // Выполняем проверку капчи на сервере (через вашу функцию)
-    const captchaOk = await verifyTurnstileServerSide(token);
-    if (!captchaOk) {
-      showToast("Captcha doğrulaması alınmadı.", "error");
-      return;
-    }
-    
-    await signInWithEmailAndPassword(auth, email, pwd);
-    showToast("Giriş uğurlu!", "success");
-  } catch (e) {
-    showToast(parseFirebaseError(e.code), "error");
-  } finally {
-    btn.classList.remove("is-loading");
-    // Сбрасываем капчу после попытки
-    if (typeof turnstile !== "undefined") turnstile.reset();
-    window.__turnstileToken = null;
-  }
-
-await signInWithEmailAndPassword(auth, email, pwd);
-    
-    // ДОБАВИТЬ ЭТУ ПРОВЕРКУ:
-    if (!auth.currentUser.emailVerified) {
-        showToast("Lütfən, əvvəlcə e-poçtunuzu təsdiqləyin!", "error");
-        await auth.signOut();
+// ─── EMAIL/PASSWORD LOGIN ────────────────────────────────────
+    window.handleLoginSubmit = async (ev) => {
+      ev.preventDefault();
+      const email = document.getElementById("login-email").value.trim();
+      const pwd   = document.getElementById("login-password").value;
+      
+      const token = window.__turnstileToken;
+      if (!token) {
+        showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
         return;
-    }
-    
-    showToast("Giriş uğurlu!", "success");
+      }
 
-};
+      if (!email || !pwd) {
+        showToast("Bütün sahələri doldurun", "error");
+        return;
+      }
+
+      const btn = document.getElementById("login-submit-btn");
+      btn.classList.add("is-loading");
+      
+      try {
+        const captchaOk = await verifyTurnstileServerSide(token);
+        if (!captchaOk) {
+          showToast("Captcha doğrulaması alınmadı.", "error");
+          return;
+        }
+        
+        // Входим в систему
+        const userCredential = await signInWithEmailAndPassword(auth, email, pwd);
+        
+        // Проверяем подтверждение почты
+        if (!userCredential.user.emailVerified) {
+            showToast("Lütfən, əvvəlcə e-poçtunuzu təsdiqləyin!", "error");
+            await auth.signOut();
+            return;
+        }
+        
+        showToast("Giriş uğurlu!", "success");
+      } catch (e) {
+        showToast(parseFirebaseError(e.code), "error");
+      } finally {
+        btn.classList.remove("is-loading");
+        if (typeof turnstile !== "undefined") turnstile.reset();
+        window.__turnstileToken = null;
+      }
+    };
     // ─── EMAIL/PASSWORD REGISTRATION ─────────────────────────────
     window.handleRegisterSubmit = async (ev) => {
       ev.preventDefault();
