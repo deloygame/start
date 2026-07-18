@@ -280,8 +280,7 @@
     return true; 
 }
 
-// ─── EMAIL/PASSWORD LOGIN ────────────────────────────────────
-    window.handleLoginSubmit = async (ev) => {
+window.handleLoginSubmit = async (ev) => {
       ev.preventDefault();
       const email = document.getElementById("login-email").value.trim();
       const pwd   = document.getElementById("login-password").value;
@@ -326,6 +325,7 @@
         window.__turnstileToken = null;
       }
     };
+    
     // ─── EMAIL/PASSWORD REGISTRATION ─────────────────────────────
     window.handleRegisterSubmit = async (ev) => {
       ev.preventDefault();
