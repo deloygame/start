@@ -25,8 +25,7 @@
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword,
       updateProfile,
-      sendPasswordResetEmail,
-      sendEmailVerification
+      sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -92,11 +91,17 @@
       return map[code] || "Xəta baş verdi. Yenidən cəhd edin.";
     }
 
-   onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, user => {
   if (user) {
-    console.log("İstifadəçi daxil oldu:", user.email);
-  } else  {
-    if (!window.location.pathname.includes("auth.html")) {
+    // Если пользователь авторизован, мы просто проверяем, подтверждена ли почта.
+    // Если НЕ подтверждена, мы просто выходим из системы.
+    if (user.providerData[0].providerId === 'password' && !user.emailVerified) {
+        // Не делаем alert, просто выходим
+        auth.signOut();
+    }
+  } else {
+    // Если не авторизован — перенаправляем на страницу входа
+    if (window.location.pathname !== "/auth.html") {
         window.location.href = "auth.html";
     }
   }
@@ -272,110 +277,113 @@
     return true; 
 }
 
-window.handleLoginSubmit = async (ev) => {
-      ev.preventDefault();
-      const email = document.getElementById("login-email").value.trim();
-      const pwd   = document.getElementById("login-password").value;
-      
-      const token = window.__turnstileToken;
-      if (!token) {
-        showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
-        return;
-      }
+    // ─── EMAIL/PASSWORD LOGIN ────────────────────────────────────
+     window.handleLoginSubmit = async (ev) => {
+  ev.preventDefault();
+  const email = document.getElementById("login-email").value.trim();
+  const pwd   = document.getElementById("login-password").value;
+  
+  // Добавляем проверку токена
+  const token = window.__turnstileToken;
+  if (!token) {
+    showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
+    return;
+  }
 
-      if (!email || !pwd) {
-        showToast("Bütün sahələri doldurun", "error");
-        return;
-      }
+  if (!email || !pwd) {
+    showToast("Bütün sahələri doldurun", "error");
+    return;
+  }
 
-      const btn = document.getElementById("login-submit-btn");
-      btn.classList.add("is-loading");
-      
-      try {
-        const captchaOk = await verifyTurnstileServerSide(token);
-        if (!captchaOk) {
-          showToast("Captcha doğrulaması alınmadı.", "error");
-          return;
-        }
-        
-        // Входим в систему
-        const userCredential = await signInWithEmailAndPassword(auth, email, pwd);
-        
-        // Проверяем подтверждение почты
-        if (!userCredential.user.emailVerified) {
-            showToast("Lütfən, əvvəlcə e-poçtunuzu təsdiqləyin!", "error");
-            await auth.signOut();
-            return;
-        }
-        
-        showToast("Giriş uğurlu!", "success");
-      } catch (e) {
-        showToast(parseFirebaseError(e.code), "error");
-      } finally {
-        btn.classList.remove("is-loading");
-        if (typeof turnstile !== "undefined") turnstile.reset();
-        window.__turnstileToken = null;
-      }
-    };
+  const btn = document.getElementById("login-submit-btn");
+  btn.classList.add("is-loading");
+  
+  try {
+    // Выполняем проверку капчи на сервере (через вашу функцию)
+    const captchaOk = await verifyTurnstileServerSide(token);
+    if (!captchaOk) {
+      showToast("Captcha doğrulaması alınmadı.", "error");
+      return;
+    }
     
+    await signInWithEmailAndPassword(auth, email, pwd);
+    showToast("Giriş uğurlu!", "success");
+  } catch (e) {
+    showToast(parseFirebaseError(e.code), "error");
+  } finally {
+    btn.classList.remove("is-loading");
+    // Сбрасываем капчу после попытки
+    if (typeof turnstile !== "undefined") turnstile.reset();
+    window.__turnstileToken = null;
+  }
+};
     // ─── EMAIL/PASSWORD REGISTRATION ─────────────────────────────
-    window.handleRegisterSubmit = async (ev) => {
-      ev.preventDefault();
-      const ad      = document.getElementById("reg-firstname").value.trim();
-      const soyad   = document.getElementById("reg-lastname").value.trim();
-      const email   = document.getElementById("reg-email").value.trim();
-      const pwd     = document.getElementById("reg-password").value;
-      const confirm = document.getElementById("reg-confirm").value;
+   window.handleRegisterSubmit = async (ev) => {
+  ev.preventDefault();
+  const ad      = document.getElementById("reg-firstname").value.trim();
+  const soyad   = document.getElementById("reg-lastname").value.trim();
+  const email   = document.getElementById("reg-email").value.trim();
+  const pwd     = document.getElementById("reg-password").value;
+  const confirm = document.getElementById("reg-confirm").value;
 
-      if (!ad || !soyad || !email || !pwd || !confirm) {
-        showToast("Bütün sahələri doldurun", "error");
-        return;
-      }
-      const strength = evaluatePassword(pwd);
-      if (!strength.valid) {
-        showToast("Şifrə ən azı 8 simvol olmalı və hərflər+rəqəm/simvol qarışığından ibarət olmalıdır", "error");
-        return;
-      }
-      if (pwd !== confirm) {
-        showToast("Şifrələr üst-üstə düşmür", "error");
-        return;
-      }
-      const token = window.__turnstileToken;
-      if (!token) {
-        showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
-        return;
-      }
+  // Базовые проверки
+  if (!ad || !soyad || !email || !pwd || !confirm) {
+    showToast("Bütün sahələri doldurun", "error");
+    return;
+  }
+  const strength = evaluatePassword(pwd);
+  if (!strength.valid) {
+    showToast("Şifrə ən azı 8 simvol olmalı və hərflər+rəqəm/simvol qarışığından ibarət olmalıdır", "error");
+    return;
+  }
+  if (pwd !== confirm) {
+    showToast("Şifrələr üst-üstə düşmür", "error");
+    return;
+  }
+  const token = window.__turnstileToken;
+  if (!token) {
+    showToast("Zəhmət olmasa, robot olmadığınızı təsdiqləyin", "error");
+    return;
+  }
 
-      const btn = document.getElementById("register-submit-btn");
-      btn.classList.add("is-loading");
-      try {
-        const captchaOk = await verifyTurnstileServerSide(token);
-        if (!captchaOk) {
-          showToast("Captcha doğrulaması alınmadı. Bir az sonra yenidən cəhd edin.", "error");
-          return;
-        }
-        
-        // 1. Создаем пользователя
-        const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-        await updateProfile(cred.user, { displayName: `${ad} ${soyad}` });
-        
-        // 2. ОТПРАВЛЯЕМ ПИСЬМО (вот здесь магия)
-        await sendEmailVerification(cred.user);
-        
-        // 3. ПОКАЗЫВАЕМ ВАШЕ ОКНО
-        document.getElementById('verifyModal').style.display = 'flex';
-        
-        // 4. ВЫКИДЫВАЕМ ЕГО ИЗ СИСТЕМЫ, чтобы он не зашел без подтверждения
-        await auth.signOut();
-        
-      } catch (e) {
-        showToast(parseFirebaseError(e.code), "error");
-      } finally {
-        btn.classList.remove("is-loading");
-        if (typeof turnstile !== "undefined") turnstile.reset();
-        window.__turnstileToken = null;
-      }
-    };
+  const btn = document.getElementById("register-submit-btn");
+  btn.classList.add("is-loading");
+  
+  try {
+    const captchaOk = await verifyTurnstileServerSide(token);
+    if (!captchaOk) {
+      showToast("Captcha doğrulaması alınmadı.", "error");
+      return;
+    }
+    
+    // 1. Создаем пользователя
+    const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+    
+    // 2. Обновляем имя
+    await updateProfile(cred.user, { displayName: `${ad} ${soyad}` });
+    
+    // 3. ОТПРАВЛЯЕМ ПИСЬМО (ЭТОГО НЕ БЫЛО В ВАШЕМ КОДЕ)
+    await sendEmailVerification(cred.user);
+    
+    // 4. Показываем сообщение и модальное окно
+    showToast("Qeydiyyat uğurludur! E-poçtunuza təsdiq linki göndərildi.", "success");
+    
+    // Показываем ваше модальное окно (убедитесь, что ID "verifyModal" существует в HTML)
+    const modal = document.getElementById('verifyModal');
+    if (modal) modal.style.display = 'flex';
+    
+    // ВАЖНО: Выходим из системы сразу после регистрации, 
+    // чтобы onAuthStateChanged не блокировал пользователя до подтверждения почты
+    await auth.signOut();
+    
+  } catch (e) {
+    showToast(parseFirebaseError(e.code), "error");
+  } finally {
+    btn.classList.remove("is-loading");
+    if (typeof turnstile !== "undefined") turnstile.reset();
+    window.__turnstileToken = null;
+  }
+};
 
     // ─── FORGOT PASSWORD ─────────────────────────────────────────
     window.handleForgotSubmit = async (ev) => {
@@ -728,16 +736,5 @@ window.handleLoginSubmit = async (ev) => {
   </div>
 
   <div id="toast-container"></div>
-
-
-<!-- Modal -->
-<div id="verifyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center;">
-  <div style="background:white; padding:30px; border-radius:20px; text-align:center; max-width:300px; color:#333;">
-    <h3>Təsdiq tələb olunur!</h3>
-    <p style="margin:15px 0;">E-poçtunuza təsdiq linki göndərdik. Lütfən, poçtunuzu yoxlayın və linkə klikləyin.</p>
-    <button onclick="window.location.reload()" style="padding:10px 20px; background:#3b82f6; color:white; border:none; border-radius:10px; cursor:pointer;">Anladım</button>
-  </div>
-</div>
-
 </body>
 </html>
