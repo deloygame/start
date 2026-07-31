@@ -17,8 +17,6 @@
       --accent-glow: rgba(99, 102, 241, 0.3);
       --text: #f8fafc;
       --muted: #94a3b8;
-      --red: #ef4444;
-      --green: #22c55e;
     }
 
     * {
@@ -39,7 +37,6 @@
       position: relative;
     }
 
-    /* Фоновые неоновые круги */
     body::before {
       content: '';
       position: absolute;
@@ -118,7 +115,6 @@
       margin-bottom: 32px;
     }
 
-    /* Блок техподдержки */
     .support-box {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
@@ -201,22 +197,29 @@
     }
 
     .social-btn {
-      width: 40px;
-      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 10px 16px;
       color: var(--muted);
       text-decoration: none;
-      transition: color 0.2s, border-color 0.2s;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
     }
 
     .social-btn:hover {
       color: var(--text);
       border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .social-btn i {
+      color: #0088cc;
+      font-size: 16px;
     }
 
     .footer-note {
@@ -233,16 +236,16 @@
       <div class="logo-area">DeLoY<span>Game</span></div>
       
       <div class="icon-box">
-        <i class="fas fa-hammer"></i>
+        <i class="fas fa-gamepad"></i>
       </div>
 
-      <h1>Sayt hazırlandıqdadır</h1>
-      <p>Platformamızda ən yaxşı təcrübəni təmin etmək üçün texniki işlər aparırıq. Çox tezliklə qayıdacağıq!</p>
+      <h1>Sayt Hazırlanır</h1>
+      <p>Sizin üçün ən mükəmməl oyun platformasını qururuq. Tezliklə yenidən qarşınızda olacağıq!</p>
 
-      <!-- Форма саппорта / связи -->
+      <!-- Dəstək Formu -->
       <div class="support-box">
         <h3><i class="fas fa-headset"></i> Dəstək ilə əlaqə</h3>
-        <p>Sualınız və ya probleminiz var? Bizə yazın:</p>
+        <p>Hər hansı bir sualınız yaranarsa, bizə yaza bilərsiniz:</p>
         
         <form id="maintenance-support-form" onsubmit="handleSupportSubmit(event)">
           <input type="email" id="sup-email" class="support-input" placeholder="E-poçt ünvanınız" required>
@@ -255,9 +258,9 @@
       </div>
 
       <div class="socials">
-        <a href="#" class="social-btn"><i class="fab fa-discord"></i></a>
-        <a href="#" class="social-btn"><i class="fab fa-telegram"></i></a>
-        <a href="#" class="social-btn"><i class="fab fa-instagram"></i></a>
+        <a href="https://t.me/deloy0" target="_blank" class="social-btn">
+          <i class="fab fa-telegram"></i> @deloy0
+        </a>
       </div>
 
       <div class="footer-note">
@@ -266,7 +269,6 @@
     </div>
   </div>
 
-  <!-- Firebase & логика отправки в поддержку (если нужно сохранить в support_messages) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -295,7 +297,6 @@
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Göndərilir...';
 
       try {
-        // Сохраняет напрямую в коллекцию support_messages, для которой у вас уже прописаны правила allow create: if true;
         await addDoc(collection(db, "support_messages"), {
           email: email,
           message: message,
@@ -303,7 +304,7 @@
           status: "pending"
         });
 
-        alert("Mesajınız uğurla göndərildi! Ən qısa zamanda sizinlə əlaqə saxlayacağıq.");
+        alert("Mesajınız uğurla göndərildi!");
         document.getElementById("maintenance-support-form").reset();
       } catch (err) {
         console.error(err);
