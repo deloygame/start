@@ -1,12 +1,318 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="az">
 <head>
-    <meta charset="UTF-8">
-    <title>...</title>
-    <script>
-        window.location.replace("auth.html");
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeLoYGame | Sayt Hazırlanır</title>
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: #121520;
+      --border: #1e2436;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --red: #ef4444;
+      --green: #22c55e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Фоновые неоновые круги */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: var(--accent-glow);
+      filter: blur(120px);
+      border-radius: 50%;
+      top: 10%;
+      left: 20%;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 540px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo-area {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-area span {
+      color: var(--accent);
+      -webkit-text-fill-color: var(--accent);
+    }
+
+    .icon-box {
+      width: 80px;
+      height: 80px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: var(--accent);
+      font-size: 36px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--accent-glow); }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px 10px var(--accent-glow); }
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    /* Блок техподдержки */
+    .support-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .support-box h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .support-box h3 i {
+      color: var(--accent);
+    }
+
+    .support-box p {
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .support-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .support-input:focus {
+      border-color: var(--accent);
+    }
+
+    textarea.support-input {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .socials {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .social-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .social-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .footer-note {
+      margin-top: 30px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
 </head>
 <body>
+
+  <div class="container">
+    <div class="card">
+      <div class="logo-area">DeLoY<span>Game</span></div>
+      
+      <div class="icon-box">
+        <i class="fas fa-hammer"></i>
+      </div>
+
+      <h1>Sayt hazırlandıqdadır</h1>
+      <p>Platformamızda ən yaxşı təcrübəni təmin etmək üçün texniki işlər aparırıq. Çox tezliklə qayıdacağıq!</p>
+
+      <!-- Форма саппорта / связи -->
+      <div class="support-box">
+        <h3><i class="fas fa-headset"></i> Dəstək ilə əlaqə</h3>
+        <p>Sualınız və ya probleminiz var? Bizə yazın:</p>
+        
+        <form id="maintenance-support-form" onsubmit="handleSupportSubmit(event)">
+          <input type="email" id="sup-email" class="support-input" placeholder="E-poçt ünvanınız" required>
+          <textarea id="sup-msg" class="support-input" placeholder="Mesajınız..." required></textarea>
+          <button type="submit" class="btn" id="sup-btn">
+            <span>Mesajı göndər</span>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+
+      <div class="socials">
+        <a href="#" class="social-btn"><i class="fab fa-discord"></i></a>
+        <a href="#" class="social-btn"><i class="fab fa-telegram"></i></a>
+        <a href="#" class="social-btn"><i class="fab fa-instagram"></i></a>
+      </div>
+
+      <div class="footer-note">
+        &copy; 2026 DeLoYGame. Bütün hüquqlar qorunur.
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase & логика отправки в поддержку (если нужно сохранить в support_messages) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCENG4xEaW00K9FY1AagNVQkIJ2076fwp8",
+      authDomain: "dly-login-3bb4b.firebaseapp.com",
+      projectId: "dly-login-3bb4b",
+      storageBucket: "dly-login-3bb4b.firebasestorage.app",
+      messagingSenderId: "898217736519",
+      appId: "1:898217736519:web:3a70514bf9ce3c6ae4f462"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.handleSupportSubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("sup-email").value.trim();
+      const message = document.getElementById("sup-msg").value.trim();
+      const btn = document.getElementById("sup-btn");
+
+      if (!email || !message) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Göndərilir...';
+
+      try {
+        // Сохраняет напрямую в коллекцию support_messages, для которой у вас уже прописаны правила allow create: if true;
+        await addDoc(collection(db, "support_messages"), {
+          email: email,
+          message: message,
+          createdAt: serverTimestamp(),
+          status: "pending"
+        });
+
+        alert("Mesajınız uğurla göndərildi! Ən qısa zamanda sizinlə əlaqə saxlayacağıq.");
+        document.getElementById("maintenance-support-form").reset();
+      } catch (err) {
+        console.error(err);
+        alert("Xəta baş verdi. Bir az sonra yenidən cəhd edin.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Mesajı göndər</span><i class="fas fa-paper-plane"></i>';
+      }
+    };
+  </script>
 </body>
 </html>
