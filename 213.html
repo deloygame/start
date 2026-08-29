@@ -92,6 +92,12 @@
             align-items: center;
         }
 
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .model-select {
             background: var(--bg-input);
             color: var(--text-primary);
@@ -100,6 +106,19 @@
             border-radius: 6px;
             outline: none;
             cursor: pointer;
+        }
+
+        .reset-key-btn {
+            background: var(--hover-color);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .reset-key-btn:hover {
+            color: var(--text-primary);
         }
 
         .chat-messages {
@@ -213,11 +232,13 @@
     <main class="main-container">
         <header class="chat-header">
             <span>DeLoY Workspace</span>
-            <select id="modelSelector" class="model-select">
-                <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
-                <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
-                <option value="openai/gpt-oss-20b">GPT-OSS 20B</option>
-            </select>
+            <div class="header-controls">
+                <select id="modelSelector" class="model-select">
+                    <option value="openai/gpt-oss-20b">GPT-OSS 20B</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                </select>
+                <button class="reset-key-btn" onclick="resetKey()" title="Сбросить сохраненный API ключ">🔑 Сбросить ключ</button>
+            </div>
         </header>
         
         <div class="chat-messages" id="chatMessages">
@@ -270,6 +291,11 @@
                 }
             }
             return key;
+        }
+
+        function resetKey() {
+            localStorage.removeItem("groq_api_key");
+            alert("Ключ успешно сброшен! При следующем отправленном сообщении вас попросят ввести его заново.");
         }
 
         async function sendMessage() {
@@ -358,7 +384,6 @@
             chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
         }
 
-        document.getElementById('userInput').addEventListner?.('keydown', function(e){});
         document.getElementById('userInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
