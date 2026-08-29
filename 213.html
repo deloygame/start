@@ -87,6 +87,19 @@
             font-size: 16px;
             font-weight: 500;
             background-color: var(--bg-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-select {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
         }
 
         .chat-messages {
@@ -119,6 +132,7 @@
             border-radius: 12px;
             line-height: 1.5;
             font-size: 15px;
+            white-space: pre-wrap;
         }
 
         /* Input Area */
@@ -180,6 +194,7 @@
 </head>
 <body>
 
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-top">
             <div class="logo-area">⚡ DeLoY AI</div>
@@ -194,13 +209,21 @@
         </div>
     </aside>
 
+    <!-- Main Chat Window -->
     <main class="main-container">
-        <header class="chat-header">DeLoY Workspace</header>
+        <header class="chat-header">
+            <span>DeLoY Workspace</span>
+            <select id="modelSelector" class="model-select">
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+                <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                <option value="openai/gpt-oss-20b">GPT-OSS 20B</option>
+            </select>
+        </header>
         
         <div class="chat-messages" id="chatMessages">
             <div class="message-wrapper">
                 <div class="message-content" style="background: var(--bg-input); border: 1px solid var(--border-color);">
-                    Привет! Я твой ассистент DeLoY. Чем могу помочь сегодня?
+                    Привет! Я твой ассистент DeLoY. Всё готово к работе!
                 </div>
             </div>
         </div>
@@ -213,14 +236,14 @@
         </div>
     </main>
 
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
     <script>
-        // Конфигурация Firebase проекта dly-login-3bb4b
         const firebaseConfig = {
-            apiKey: "AIzaSy... (вставьте ваши данные firebase если нужно)",
+            apiKey: "AIzaSy... (вставьте свои настройки firebase)",
             authDomain: "dly-login-3bb4b.firebaseapp.com",
             databaseURL: "https://dly-login-3bb4b-default-rtdb.firebaseio.com",
             projectId: "dly-login-3bb4b",
@@ -233,13 +256,11 @@
         const auth = firebase.auth();
         const rtdb = firebase.database();
 
-        // Автоматическое изменение высоты textarea
         function autoResize(textarea) {
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         }
 
-        // Получение или запрос Groq API ключа безопасно
         function getGroqApiKey() {
             let key = localStorage.getItem("groq_api_key");
             if (!key) {
@@ -251,7 +272,6 @@
             return key;
         }
 
-        // Отправка сообщения
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
@@ -263,6 +283,7 @@
                 return;
             }
 
+            const selectedModel = document.getElementById('modelSelector').value;
             const chatMessages = document.getElementById('chatMessages');
             
             // Вывод сообщения пользователя
@@ -276,7 +297,6 @@
             input.style.height = 'auto';
             chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
 
-            // Сохранение запроса в Firebase RTDB
             const user = auth.currentUser;
             if (user) {
                 rtdb.ref('chats/' + user.uid).push({
@@ -286,10 +306,9 @@
                 });
             }
 
-            // Блок ожидания ответа ИИ
             const aiMsg = document.createElement('div');
             aiMsg.className = 'message-wrapper';
-            aiMsg.innerHTML = `<div class="thought-box">Groq Llama думает...</div><div class="message-content" id="loadingResponse" style="background: var(--hover-color);">...</div>`;
+            aiMsg.innerHTML = `<div class="thought-box">Groq (${selectedModel}) думает...</div><div class="message-content" style="background: var(--hover-color);">...</div>`;
             chatMessages.appendChild(aiMsg);
             chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
 
@@ -304,7 +323,7 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: "llama-3.1-8b-instant",
+                        model: selectedModel,
                         messages: [
                             { role: "user", content: text }
                         ]
@@ -315,10 +334,9 @@
 
                 if (data.choices && data.choices[0].message.content) {
                     const aiReply = data.choices[0].message.content;
-                    thoughtBoxEl.innerText = "DeLoY AI (Groq Llama)";
+                    thoughtBoxEl.innerText = `DeLoY AI (${selectedModel})`;
                     responseContentEl.innerText = aiReply;
 
-                    // Сохранение ответа ИИ в Firebase RTDB
                     if (user) {
                         rtdb.ref('chats/' + user.uid).push({
                             text: aiReply,
@@ -328,8 +346,8 @@
                     }
                 } else {
                     thoughtBoxEl.innerText = "Ошибка API";
-                    responseContentEl.innerText = "Ошибка сервера: " + (data.error ? data.error.message : "Не удалось получить ответ.");
-                    console.error("Полный ответ сервера:", data);
+                    responseContentEl.innerText = "Ошибка сервера: " + (data.error ? data.error.message : JSON.stringify(data));
+                    console.error("Ответ сервера:", data);
                 }
             } catch (error) {
                 thoughtBoxEl.innerText = "Ошибка соединения";
@@ -340,7 +358,7 @@
             chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
         }
 
-        // Обработка нажатия Enter (без Shift)
+        document.getElementById('userInput').addEventListner?.('keydown', function(e){});
         document.getElementById('userInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
