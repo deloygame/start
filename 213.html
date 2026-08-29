@@ -351,6 +351,7 @@
                     body: JSON.stringify({
                         model: selectedModel,
                         messages: [
+                            { role: "system", content: "Ты — DeLoY, искусственный интеллект и персональный ассистент в экосистеме DeLoY Workspace. На любые вопросы о том, кто ты, как тебя зовут или кто тебя создал, всегда отвечай, что ты — DeLoY, созданный специально для помощи разработчику." },
                             { role: "user", content: text }
                         ]
                     })
