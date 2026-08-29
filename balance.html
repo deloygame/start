@@ -1,1 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeLoY AI - Assistant</title>
+    <style>
+        :root {
+            --bg-main: #131314;
+            --bg-sidebar: #1e1f20;
+            --bg-input: #1e1f20;
+            --border-color: #333538;
+            --text-primary: #e3e3e3;
+            --text-secondary: #8e918f;
+            --accent-color: #7b61ff;
+            --hover-color: #2b2c2d;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+        }
+
+        .sidebar-top {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .logo-area {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            padding: 8px 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            background-color: var(--hover-color);
+        }
+
+        /* Main Chat Area */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 16px;
+            font-weight: 500;
+            background-color: var(--bg-main);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 120px;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .thought-box {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        /* Input Area */
+        .input-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, var(--bg-main) 30%);
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .input-box {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            display: flex;
+            align-items: flex-end;
+            padding: 12px 16px;
+            gap: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            resize: none;
+            max-height: 200px;
+            outline: none;
+            line-height: 1.4;
+        }
+
+        .send-btn {
+            background-color: var(--text-primary);
+            color: var(--bg-main);
+            border: none;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="logo-area">⚡ DeLoY AI</div>
+            <a href="index.html" class="nav-link">💬 Чат</a>
+            <a href="projects.html" class="nav-link">📁 Проекты</a>
+            <a href="artifacts.html" class="nav-link">📦 Артефакты</a>
+            <a href="code.html" class="nav-link">💻 Код</a>
+            <a href="customize.html" class="nav-link">🎨 Кастомизация</a>
+        </div>
+        <div class="sidebar-bottom">
+            <a href="settings.html" class="nav-link">⚙️ Настройки</a>
+        </div>
+    </aside>
+
+    <!-- Main Chat Window -->
+    <main class="main-container">
+        <header class="chat-header">DeLoY Workspace</header>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message-wrapper">
+                <div class="message-content" style="background: var(--bg-input); border: 1px solid var(--border-color);">
+                    Привет! Я твой ассистент DeLoY. Чем могу помочь сегодня?
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-box">
+                <textarea id="userInput" placeholder="Введите сообщение для DeLoY..." rows="1" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendMessage()">↑</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <script>
+        // Конфигурация Firebase проекта dly-login-3bb4b
+        const firebaseConfig = {
+            apiKey: "AIzaSy... (вставьте ваши данные firebase если нужно)",
+            authDomain: "dly-login-3bb4b.firebaseapp.com",
+            databaseURL: "https://dly-login-3bb4b-default-rtdb.firebaseio.com",
+            projectId: "dly-login-3bb4b",
+            storageBucket: "dly-login-3bb4b.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const rtdb = firebase.database();
+
+        // Автоматическое изменение высоты textarea
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // Отправка сообщения
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Вывод сообщения пользователя
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message-wrapper';
+            userMsg.style.alignItems = 'flex-end';
+            userMsg.innerHTML = `<div class="message-content" style="background: var(--bg-input); border: 1px solid var(--border-color); max-width: 80%;">${text}</div>`;
+            chatMessages.appendChild(userMsg);
+
+            input.value = '';
+            input.style.height = 'auto';
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+
+            // Сохранение запроса в Firebase RTDB
+            const user = auth.currentUser;
+            if (user) {
+                rtdb.ref('chats/' + user.uid).push({
+                    text: text,
+                    sender: 'user',
+                    timestamp: Date.now()
+                });
+            }
+
+            // Блок ожидания ответа ИИ
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'message-wrapper';
+            aiMsg.innerHTML = `<div class="thought-box">Gemini думает...</div><div class="message-content" id="loadingResponse" style="background: var(--hover-color);">...</div>`;
+            chatMessages.appendChild(aiMsg);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+
+            const responseContentEl = aiMsg.querySelector('.message-content');
+            const thoughtBoxEl = aiMsg.querySelector('.thought-box');
+
+try {
+    const GEMINI_API_KEY = "AIzaSyBcVOkTmA0Jf3bDnq4h3F3Fv-bJFyFRu5w"; 
+    
+    // Используем проверенную модель gemini-1.5-flash
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            contents: [
+                { parts: [{ text: text }] }
+            ]
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+        const aiReply = data.candidates[0].content.parts[0].text;
+        thoughtBoxEl.innerText = "DeLoY AI (Gemini Flash)";
+        responseContentEl.innerText = aiReply;
+
+        // Сохранение ответа ИИ в Firebase RTDB
+        const user = auth.currentUser;
+        if (user) {
+            rtdb.ref('chats/' + user.uid).push({
+                text: aiReply,
+                sender: 'ai',
+                timestamp: Date.now()
+            });
+        }
+    } else {
+        thoughtBoxEl.innerText = "Ошибка API";
+        responseContentEl.innerText = "Ошибка сервера: " + (data.error ? data.error.message : "Не удалось получить ответ.");
+        console.error("Полный ответ сервера:", data);
+    }
+} catch (error) {
+    thoughtBoxEl.innerText = "Ошибка соединения";
+    responseContentEl.innerText = "Ошибка: " + error.message;
+    console.error(error);
+}
+
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        // Обработка нажатия Enter (без Shift)
+        document.getElementById('userInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
