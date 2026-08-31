@@ -233,11 +233,11 @@
     .badge-seam::before{left:-8px;}
     .badge-seam::after{right:-8px;}
 
-    .bal-chip{padding:16px 22px 20px;display:flex;align-items:center;justify-content:space-between;}
-    .bal-chip-label{font-size:10.5px;color:var(--muted-2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;}
-    .bal-chip-val{font-size:21px;font-weight:700;color:var(--primary);}
-    .bal-chip-btn{background:var(--primary);border:none;color:var(--on-primary);padding:7px 13px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;transition:.2s;font-family:'Plus Jakarta Sans',sans-serif;}
+    .bal-chip{padding:16px 22px 20px;display:flex;align-items:center;justify-content:center;}
+    .bal-chip-btn{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:var(--on-primary);padding:11px 22px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;transition:.2s;font-family:'Plus Jakarta Sans',sans-serif;width:100%;text-align:center;box-shadow:0 6px 18px rgba(56,189,248,.35);}
     .bal-chip-btn:hover{transform:translateY(-1px);filter:brightness(1.08);}
+
+    .av-name-row{display:flex;align-items:center;justify-content:center;gap:8px;}
 
     .nav-group{flex:1;}
     .nav-label{font-size:10px;color:var(--muted-2);text-transform:uppercase;letter-spacing:1.5px;padding:0 8px;margin-bottom:8px;margin-top:22px;}
@@ -324,24 +324,25 @@
     .order-item:last-child{border-bottom:none;padding-bottom:0;}
     .order-icon{width:40px;height:40px;border-radius:11px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.18);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--primary);flex-shrink:0;}
     .order-info{flex:1;min-width:0;}
-    .order-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
-    .order-meta{font-size:11px;color:var(--muted-2);}
+    .order-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
+    .order-meta{font-size:12px;color:var(--muted);}
     .order-right{text-align:right;flex-shrink:0;}
-    .order-price{font-size:14px;font-weight:700;color:var(--primary);}
-    .order-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-top:4px;display:inline-block;}
-    .s-pending{background:rgba(251,191,36,.14);color:var(--yellow);}
-    .s-completed{background:rgba(74,222,128,.14);color:var(--green);}
-    .s-cancelled{background:rgba(248,113,113,.14);color:var(--red);}
+    .order-price{font-size:15px;font-weight:800;color:var(--primary);}
+    .order-status{font-size:11px;font-weight:800;padding:4px 10px;border-radius:7px;margin-top:5px;display:inline-block;letter-spacing:.2px;}    .s-pending{background:rgba(251,191,36,.14);color:var(--yellow);}
+    .s-pending{background:rgba(251,191,36,.22);color:#fbbf24;}
+    .s-completed{background:rgba(74,222,128,.22);color:#4ade80;}
+    .s-cancelled{background:rgba(248,113,113,.22);color:#f87171;}
+
 
     .topup-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px dashed var(--line);}
     .topup-item:last-child{border-bottom:none;}
     .topup-left{display:flex;align-items:center;gap:12px;}
-    .topup-dot{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-    .topup-dot.approved{background:rgba(74,222,128,.12);color:var(--green);}
-    .topup-dot.pending{background:rgba(251,191,36,.12);color:var(--yellow);}
-    .topup-dot.rejected{background:rgba(248,113,113,.12);color:var(--red);}
-    .topup-name{font-size:13px;font-weight:600;margin-bottom:2px;}
-    .topup-date{font-size:11px;color:var(--muted-2);}
+    .topup-dot{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;border:1.5px solid transparent;}
+.topup-dot.approved{background:rgba(74,222,128,.18);color:#4ade80;border-color:rgba(74,222,128,.35);}
+.topup-dot.pending{background:rgba(251,191,36,.18);color:#fbbf24;border-color:rgba(251,191,36,.35);}
+.topup-dot.rejected{background:rgba(248,113,113,.18);color:#f87171;border-color:rgba(248,113,113,.35);}
+    .topup-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;}
+    .topup-date{font-size:12px;color:var(--muted);}
     .topup-amount{font-size:15px;font-weight:700;color:var(--green);}
 
     .empty{text-align:center;padding:30px;color:var(--muted);font-size:13px;}
@@ -416,14 +417,13 @@
     .avatar-current-info p{font-size:12px;color:var(--muted);margin-top:3px;}
     .avatar-grid {
         display: grid;
-        grid-template-columns: repeat(6, 1fr); /* Делаем больше колонок, чтобы они стали меньше */
+        grid-template-columns: repeat(6, 1fr);
         gap: 10px;
         margin-bottom: 18px;
     }
     @media(max-width:480px){.avatar-grid{grid-template-columns:repeat(4,1fr);gap:8px;}}
     .avatar-choice {
-        width: 100px; /* Фиксированный компактный размер */
-        height: 100px;
+        width: 100%;
         aspect-ratio: 1;
         border-radius: 50%;
         border: 2px solid transparent;
@@ -435,7 +435,7 @@
     }    .avatar-choice img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
     .avatar-choice:hover{transform:scale(1.08);}
     .avatar-choice.selected{border-color:var(--primary);}
-    .avatar-upload-row{display:flex;align-items:center;gap:10px;}
+    .avatar-upload-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
     .avatar-upload-btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:'Plus Jakarta Sans',sans-serif;}
     .avatar-upload-btn:hover{border-color:var(--line-2);}
     .avatar-hint{font-size:11.5px;color:var(--muted-2);}
@@ -453,18 +453,19 @@
       .sidebar{flex-direction:row;align-items:center;gap:10px;height:auto;padding:12px 16px;border-right:none;border-bottom:1px solid var(--line);z-index:60;}
       .sidebar .brand{display:none;}
       .sidebar .nav-group,.sidebar .nav-bottom{display:none;}
-      .sidebar .badge-card{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;background:none;border:none;margin:0;border-radius:0;}
+      .sidebar .badge-card{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;background:none;border:none;margin:0;border-radius:0;min-width:0;}
       .sidebar .badge-seam{display:none;}
-      .sidebar .av-section{display:flex;align-items:center;gap:10px;text-align:left;padding:0;}
+      .sidebar .av-section{display:flex;align-items:center;gap:10px;text-align:left;padding:0;min-width:0;flex:1;}
       .sidebar .av-ring{width:38px;height:38px;margin:0;flex-shrink:0;}
-      .sidebar .av-name{font-size:13px;}
+      .sidebar .av-name-row{justify-content:flex-start;min-width:0;}
+      .sidebar .av-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
       .sidebar .av-email,.sidebar .av-badge{display:none;}
-      .sidebar .bal-chip{padding:0;gap:10px;}
-      .sidebar .bal-chip-label{display:none;}
-      .sidebar .bal-chip-val{font-size:14px;}
-      .sidebar .bal-chip-btn{padding:6px 11px;font-size:11px;}
-      .form-row{grid-template-columns:1fr;}
-      .stats-row{grid-template-columns:1fr 1fr;}
+      .sidebar .bal-chip{padding:0;flex-shrink:0;}
+      .sidebar .bal-chip-btn{width:auto;padding:9px 14px;font-size:11.5px;white-space:nowrap;box-shadow:none;}
+
+      .order-item, .topup-item { padding-right: 0; }
+      .section-head { padding-right: 0; }
+      .avatar-upload-row { gap: 8px; }
     }
 
     /* ================= BOTTOM TAB BAR (mobile) ================= */
@@ -546,6 +547,72 @@
     }
 
 
+
+/* ===== Light theme: усиленный контраст для статусов и иконок ===== */
+body.light-theme .s-pending{background:#fef3c7;color:#b45309;}
+body.light-theme .s-completed{background:#dcfce7;color:#15803d;}
+body.light-theme .s-cancelled{background:#fee2e2;color:#b91c1c;}
+
+body.light-theme .badge-pending{background:#fef3c7;color:#b45309;}
+body.light-theme .badge-approved{background:#dcfce7;color:#15803d;}
+body.light-theme .badge-rejected{background:#fee2e2;color:#b91c1c;}
+
+body.light-theme .topup-dot.approved{background:#dcfce7;color:#16a34a;border-color:#86efac;}
+body.light-theme .topup-dot.pending{background:#fef3c7;color:#d97706;border-color:#fcd34d;}
+body.light-theme .topup-dot.rejected{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+
+body.light-theme .order-icon{background:#e0f2fe;border-color:#7dd3fc;color:#0284c7;}
+body.light-theme .stat-icon-chip.blue{background:#e0f2fe;color:#0284c7;}
+body.light-theme .stat-icon-chip.purple{background:#ede9fe;color:#7c3aed;}
+body.light-theme .stat-icon-chip.green{background:#dcfce7;color:#16a34a;}
+body.light-theme .stat-icon-chip.yellow{background:#fef3c7;color:#d97706;}
+
+
+body.light-theme .page-sub {
+    color: #64748b;
+}
+
+body.light-theme .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 12px rgba(15,23,42,.04);
+}
+
+body.light-theme .stat-card,
+body.light-theme .section-card,
+body.light-theme .form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 10px rgba(15,23,42,.05);
+}
+
+body.light-theme .stat-card,
+body.light-theme .section-card,
+body.light-theme .form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 10px rgba(15,23,42,.05);
+}
+
+.section-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+    padding-right: 60px;
+}
+
+.topup-item, .order-item {
+    padding-right: 50px;
+}
+
+.section-card {
+    margin-right: 4px;
+}
+
+
+
+
 </style>
 </head>
 <body onclick="closeAll(event)">
@@ -572,17 +639,25 @@
           <div class="av-ring" id="sidebar-avatar-wrap" onclick="jumpToAvatarPicker()">
             <div class="av-inner skeleton" id="sidebar-avatar"></div>
           </div>
-          <div class="av-name skeleton" id="sidebar-name">Yüklənir</div>
+          <div class="av-name-row">
+            <div class="av-name skeleton" id="sidebar-name">Yüklənir</div>
+          </div>
+         
           <div class="av-email skeleton" id="sidebar-email">name@gmail.com</div>
-          <div class="av-badge"><i class="fas fa-circle" style="font-size:6px;"></i> <span data-key="active_badge">Aktiv</span></div>
+          
+
+
+<div class="av-badge">
+  <i class="fas fa-circle" style="font-size:6px;color:var(--green);"></i>
+  <span id="online-count-badge">—</span>
+</div>
+
+
+
           <div class="av-badge" style="margin-left:6px;background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.2);color:var(--primary);cursor:pointer;" id="sidebar-shortid" onclick="copyShortId()" title="Kopyalamaq üçün klikləyin">ID: —</div>
         </div>
         <div class="badge-seam"></div>
         <div class="bal-chip">
-          <div>
-            <div class="bal-chip-label" data-key="balance_label">Balans</div>
-            <div class="bal-chip-val num skeleton" id="sidebar-balance">0000</div>
-          </div>
           <a href="balance.html" class="bal-chip-btn" data-key="balance_btn">+ Artır</a>
         </div>
       </div>
@@ -618,9 +693,6 @@
         <a href="home.html" class="nav-item">
           <i class="fas fa-home"></i> <span data-key="nav_home">Ana Səhifə</span>
         </a>
-        <div class="nav-logout" onclick="logoutUser()">
-          <i class="fas fa-sign-out-alt" style="width:18px;font-size:14px;"></i> <span data-key="nav_exit">Çıxış</span>
-        </div>
       </div>
     </aside>
 
@@ -782,8 +854,6 @@
   <a href="game.html" class="more-item"><i class="fas fa-gamepad"></i> <span data-key="nav_games">Oyunlar</span></a>
   <a href="support.html" class="more-item"><i class="fas fa-headset"></i> <span data-key="nav_support">Dəstək</span></a>
   <a href="home.html" class="more-item"><i class="fas fa-home"></i> <span data-key="nav_home">Ana Səhifə</span></a>
-  <div class="more-divider"></div>
-  <a href="#" class="more-item danger" onclick="logoutUser();return false;"><i class="fas fa-sign-out-alt"></i> <span data-key="nav_exit">Çıxış</span></a>
 </div>
 
 <footer class="site-footer">
@@ -838,10 +908,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, query, where, orderBy, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { getDatabase, ref as dbRef, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCENG4xEaW00K9FY1AagNVQkIJ2076fwp8",
   authDomain: "dly-login-3bb4b.firebaseapp.com",
+  databaseURL: "https://dly-login-3bb4b-default-rtdb.firebaseio.com",
   projectId: "dly-login-3bb4b",
   storageBucket: "dly-login-3bb4b.firebasestorage.app",
   messagingSenderId: "898217736519",
@@ -852,6 +926,9 @@ const app     = initializeApp(firebaseConfig);
 const auth    = getAuth(app);
 const db      = getFirestore(app);
 const storage = getStorage(app);
+const rtdb    = getDatabase(app);
+
+
 
 // Same unique-ID transaction as auth.html — only used as a defensive
 // fallback here, in case a users/{uid} doc is somehow missing (it should
@@ -898,7 +975,7 @@ function setAvatarDisplay(url, initials) {
 
 
 onAuthStateChanged(auth, async user => {
-  if (!user) { window.location.href = "auth.html"; return; }
+  if (!user) { window.location.href = "index.html"; return; }
 
   // 1. Безопасно вытаскиваем имя и почту
   const providerData = user.providerData[0] || {};
@@ -1007,26 +1084,25 @@ onAuthStateChanged(auth, async user => {
     if (shortIdEl) shortIdEl.textContent = 'ID: ' + (shortId || '—');
 
     const balStr = bal.toFixed(2) + '₼';
-    ['sidebar-balance','stat-balance'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) { el.classList.remove('skeleton'); el.textContent = balStr; }
-    });
+    const el = document.getElementById('stat-balance');
+    if(el) { el.classList.remove('skeleton'); el.textContent = balStr; }
 
   } catch(e) {
     console.log('Error handling user document:', e);
   }
 
+  
   // 6. Загрузка заказов
   try {
     const oq = query(collection(db,'orders'), where('uid','==',user.uid), orderBy('createdAt','desc'));
     onSnapshot(oq, snap => {
-      window.allOrders = snap.docs.map(d => ({id:d.id,...d.data()}));
-      window.ordersLoaded = true;
+      allOrders = snap.docs.map(d => ({id:d.id,...d.data()}));
+      ordersLoaded = true;
       if(typeof renderOrderStats === 'function') renderOrderStats();
       if(typeof renderRecentOrders === 'function') renderRecentOrders();
-      if(typeof renderAllOrders === 'function') renderAllOrders(window.currentFilter || 'all');
+      if(typeof renderAllOrders === 'function') renderAllOrders(currentFilter || 'all');
       
-      const pending = window.allOrders.filter(o => o.status === 'pending').length;
+      const pending = allOrders.filter(o => o.status === 'pending').length;
       const badge = document.getElementById('pending-badge');
       if(badge) {
         if(pending > 0){ badge.textContent = pending; badge.style.display = 'inline'; }
@@ -1039,14 +1115,15 @@ onAuthStateChanged(auth, async user => {
   try {
     const tq = query(collection(db,'topups'), where('uid','==',user.uid), orderBy('createdAt','desc'));
     onSnapshot(tq, snap => {
-      window.allTopups = snap.docs.map(d => ({id:d.id,...d.data()}));
-      window.topupsLoaded = true;
+      allTopups = snap.docs.map(d => ({id:d.id,...d.data()}));
+      topupsLoaded = true;
       if(typeof renderRecentTopups === 'function') renderRecentTopups();
       if(typeof renderAllTopups === 'function') renderAllTopups();
     });
   } catch(e){ console.log('topups index needed:', e); }
 });
 
+  
 
 
 
@@ -1097,6 +1174,10 @@ function skeletonTopupRows(n){
     </div>`).join('');
 }
 
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function renderRecentOrders() {
   const el = document.getElementById('recent-orders-list');
   if(!ordersLoaded){ el.innerHTML = skeletonOrderRows(3); return; }
@@ -1119,16 +1200,16 @@ function orderHTML(o) {
   const date = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString(localeFor(lang),{day:'2-digit',month:'short',year:'numeric'}) : '—';
   const statusMap = {pending:'s-pending',completed:'s-completed',cancelled:'s-cancelled'};
   const statusLabel = {pending:tr.status_pending,completed:tr.status_completed,cancelled:tr.status_cancelled};
-  const itemList = (o.items||[]).map(i=>`${i.name} ×${i.qty}`).join(', ') || o.game || '—';
+  const itemList = esc((o.items||[]).map(i=>`${i.name} ×${i.qty}`).join(', ') || o.game || '—');
   return `<div class="order-item">
     <div class="order-icon"><i class="fas fa-gamepad"></i></div>
     <div class="order-info">
       <div class="order-name">${itemList}</div>
-      <div class="order-meta">${o.gameId ? 'ID: '+o.gameId+' · ' : ''}${date}</div>
+      <div class="order-meta">${o.gameId ? 'ID: '+esc(o.gameId)+' · ' : ''}${date}</div>
     </div>
     <div class="order-right">
       <div class="order-price num">${(o.total||0).toFixed(2)}₼</div>
-      <div class="order-status ${statusMap[o.status]||'s-pending'}">${statusLabel[o.status]||o.status}</div>
+      <div class="order-status ${statusMap[o.status]||'s-pending'}">${statusLabel[o.status]||esc(o.status)}</div>
     </div>
   </div>`;
 }
@@ -1160,13 +1241,13 @@ function topupHTML(tp) {
     <div class="topup-left">
       <div class="topup-dot ${st}"><i class="fas ${icons[st]||'fa-clock'}"></i></div>
       <div>
-        <div class="topup-name">${tp.refCode||'Yükləmə'}</div>
-        <div class="topup-date">${date}${tp.rrn?' · RRN: '+tp.rrn:''}</div>
+        <div class="topup-name">${esc(tp.refCode||'Yükləmə')}</div>
+        <div class="topup-date">${date}${tp.rrn?' · RRN: '+esc(tp.rrn):''}</div>
       </div>
     </div>
     <div style="text-align:right;">
       <div class="topup-amount num">+${(tp.amount||0).toFixed(2)}₼</div>
-      <div class="order-status ${colorMap[st]}">${labels[st]||st}</div>
+      <div class="order-status ${colorMap[st]}">${labels[st]||esc(st)}</div>
     </div>
   </div>`;
 }
@@ -1308,6 +1389,41 @@ window.refreshDashboardText = () => {
   renderRecentTopups();
   renderAllTopups();
 };
+
+
+
+/* ── const firebase script ── */
+
+
+// ── ONLINE PRESENCE (real-time, RTDB) ──
+let sessionId = sessionStorage.getItem('dly_session_id');
+if (!sessionId) {
+  sessionId = 'sess_' + Math.random().toString(36).slice(2) + Date.now();
+  sessionStorage.setItem('dly_session_id', sessionId);
+}
+
+const myPresenceRef = dbRef(rtdb, `site_presence/${sessionId}`);
+const connectedRef = dbRef(rtdb, '.info/connected');
+
+onValue(connectedRef, (snap) => {
+  if (snap.val() === true) {
+    onDisconnect(myPresenceRef).remove();
+    set(myPresenceRef, { at: serverTimestamp(), page: location.pathname });
+  }
+});
+
+onValue(dbRef(rtdb, 'site_presence'), (snap) => {
+  const count = snap.size;
+  const el = document.getElementById('online-count-badge');
+  if (el) {
+    const lang = window.getLang ? window.getLang() : 'az';
+    const label = { az: 'onlayn', ru: 'онлайн', en: 'online' }[lang] || 'online';
+    el.textContent = `${count} ${label}`;
+  }
+});
+
+
+
 </script>
 
 <script>
@@ -1412,18 +1528,8 @@ const gamesDatabase = [
   { name: "Rust", id: "rust" }, { name: "Terraria", id: "terraria" }
 ];
 
-function searchGames() {
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  const results = document.getElementById('searchResults');
-  if (!query) { results.innerHTML = ''; return; }
-  const filtered = gamesDatabase.filter(g => g.name.toLowerCase().includes(query));
-  results.innerHTML = filtered.length > 0
-    ? filtered.map(g => `<a href="game.html#${g.id}" class="search-item"><i class="fas fa-gamepad"></i> ${g.name}</a>`).join('')
-    : '<div class="search-item" style="opacity:0.5">Oyun tapılmadı...</div>';
-}
 function toggleSearch(e) { e.stopPropagation(); document.getElementById('searchBox').classList.toggle('active'); }
 function closeAll(e) { if (!document.getElementById('searchBox').contains(e.target)) { document.getElementById('searchBox').classList.remove('active'); } }
-window.searchGames = searchGames;
 window.toggleSearch = toggleSearch;
 window.closeAll = closeAll;
 
@@ -1577,7 +1683,7 @@ window.onload = () => {
 
 /* ── SEARCH SMART ── */
 
-// Функция вычисления расстояния Левенשטейна (для определения схожести слов)
+// Функция вычисления расстояния Левенштейна (для определения схожести слов)
 function getLevenshteinDistance(a, b) {
   const matrix = [];
   for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
@@ -1603,23 +1709,16 @@ function searchGames() {
   const results = document.getElementById('searchResults');
   if (!query) { results.innerHTML = ''; return; }
 
-  // Фильтруем игры по принципу:
-  // 1. Слово содержит введенный текст (обычный поиск)
-  // 2. Либо опечатка мала (расстояние Левенштейна подходит для коротких/длинных слов)
   const filtered = gamesDatabase.filter(g => {
     const gameName = g.name.toLowerCase();
-    
-    // Если запрос полностью содержится в названии
     if (gameName.includes(query)) return true;
 
-    // Проверяем по словам на предмет опечаток (например, "minraft" -> "minecraft")
     const gameWords = gameName.split(' ');
     const queryWords = query.split(' ');
 
     return queryWords.some(qWord => {
       if (qWord.length < 2) return false;
       return gameWords.some(gWord => {
-        // Допускаем погрешность в зависимости от длины слова
         const maxErrors = qWord.length <= 4 ? 1 : 2; 
         const distance = getLevenshteinDistance(qWord, gWord);
         return distance <= maxErrors || gWord.includes(qWord);
@@ -1632,12 +1731,7 @@ function searchGames() {
     : '<div class="search-item" style="opacity:0.5">Oyun tapılmadı...</div>';
 }
 window.searchGames = searchGames;
-
-
-
 </script>
-
-
 
 </body>
 </html>
